@@ -90,11 +90,11 @@
 -record(button, {?ELEMENT_BASE(element_button), text="Button", html_encode=true, click, postback, delegate}).
 -record(literal, {?ELEMENT_BASE(element_literal), text="", html_encode=true}).
 -record(textbox, {?ELEMENT_BASE(element_textbox), text="", maxlength="", html_encode=true, next, postback, delegate, html_name}).
--record(hidden, {?ELEMENT_BASE(element_hidden), text="", html_encode=true, html_name}).
+-record(hidden, {?ELEMENT_BASE(element_hidden), text="", html_encode=true, html_name, disabled=false}).
 -record(textarea, {?ELEMENT_BASE(element_textarea), text="", html_encode=true, html_name}).
 -record(range, {?ELEMENT_BASE(element_range), min=0, max=100, step=1, value=0, next, postback, delegate}).
 -record(datepicker_textbox, {?ELEMENT_BASE(element_datepicker_textbox), text="", next, html_encode=true, validators=[], options = [{dateFormat, "yy-mm-dd"}] }).
--record(dropdown, {?ELEMENT_BASE(element_dropdown), options=[], html_encode=true, postback, delegate, value, multiple=false, data_fields=[], html_name}).
+-record(dropdown, {?ELEMENT_BASE(element_dropdown), options=[], html_encode=true, postback, delegate, value, multiple=false, disabled=false, data_fields=[], html_name}).
 -record(option, { text="", value=undefined, selected=false, show_if=true }).
 -record(checkbox, {?ELEMENT_BASE(element_checkbox), text="", html_encode=true, checked=false, value="on", postback, delegate, html_name}).
 -record(radiogroup, {?ELEMENT_BASE(element_radiogroup), body=[]}).

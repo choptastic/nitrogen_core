@@ -163,19 +163,25 @@ deserialize_websocket_context(SerializedPageContext) ->
 
 % deserialize_context/1 -
 % Updates the context with values that were stored
-% in the browser by serialize_context_state/1.
+% in the browser by serialize_context/1.
+deserialize_context(undefined) ->
+    %% If the serialized page context is undefined, don't do anything.
+    ok;
 deserialize_context(SerializedPageContext) ->
-    OldStateHandler = wf_context:handler(state_handler),
-
     % Deserialize page_context and handler_list if available...
-    [PageContext, NewStateHandler] = case SerializedPageContext of
-        undefined -> [wf_context:page_context(), OldStateHandler];
-        Other -> wf_pickle:depickle(Other)
-    end,
+    case wf_pickle:depickle(SerializedPageContext) of
+        [PageContext, NewStateHandler] ->
+            wf_context:page_context(PageContext),
+            wf_context:restore_handler(NewStateHandler),
+            ok;
+        undefined ->
+            exit({failure_to_deserialize_page_context, [
+                {serialized_page_context, SerializedPageContext},
+                {suggestion, "The most common cause of this is that "
+                             "simple_cache is not started. Try running: "
+                             "application:start(simple_cache)."}]})
+    end.
 
-    wf_context:page_context(PageContext),
-    wf_context:restore_handler(NewStateHandler),
-    ok.
 
 %%% SET UP AND TEAR DOWN HANDLERS %%%
 
@@ -183,19 +189,23 @@ deserialize_context(SerializedPageContext) ->
 % Handlers are initialized in the order that they exist in #context.handlers. The order
 % is important, as some handlers may depend on others being initialize. For example, 
 % the session handler may use the cookie handler to get or set the session cookie.
+% TODO: Re-evaluate handlers into some form of middleware layer or something.
+% Allowing us to pass handler contexts from one handler to another and limit
+% the number of process dict sets and gets
 call_init_on_handlers() ->
-    Handlers = [wf_handler:init(X) || X <- wf_context:handlers()],
-    wf_context:handlers(Handlers),
+    %% Get initial handlers
+    Handlers = wf_context:handlers(),
+    %% Clear Handler list, to re-initiate in order
+    wf_context:handlers([]),
+    %% Re-initiate handlers in order, appending them back to the handler list as we go
+    [wf_handler:init(X) || X <- Handlers],
     ok.
 
 % finish_handlers/1 - 
 % Handlers are finished in the order that they exist in #context.handlers. The order
-% is important, as some handlers should finish after others. At the very least,
-% the 'render' handler should go last to make sure that it captures all changes
-% put in place by the other handlers.
+% is important, as some handlers should finish after others.
 call_finish_on_handlers() ->
-    Handlers = [wf_handler:finish(X) || X <- wf_context:handlers()],
-    wf_context:handlers(Handlers),
+    [wf_handler:finish(X) || X <- wf_context:handlers()],
     ok.	
 
 

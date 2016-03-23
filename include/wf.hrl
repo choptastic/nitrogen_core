@@ -53,6 +53,8 @@
 -type module_function()     :: {atom(), atom()}.
 -type encoding_function()   :: module_function() | fun((iolist()) -> iolist()).
 -type encoding()            :: none | unicode | auto | encoding_function().
+-type context_data()        :: iolist() | {file, Filename :: path()}
+                                | {stream, Size :: integer(), fun()}.
 -type context_type()        :: first_request | postback_request | static_file | postback_websocket.
 %%% CONTEXT %%%
 
@@ -95,7 +97,7 @@
     type                    :: context_type(),
     bridge                  :: simple_bridge:bridge(),
     anchor=undefined        :: id(), 
-    data=[]                 :: iolist(),
+    data=[]                 :: context_data(),
     encoding=auto           :: encoding(),
     action_queue=undefined  :: wf_action_queue:action_queue() | undefined,
     % These are all serialized, sent to the browser
@@ -248,6 +250,7 @@
 -record(link, {?ELEMENT_BASE(element_link),
         text=""                 :: text(),
         body=""                 :: body(),
+        image=undefined         :: undefined | url(),
         new=false               :: boolean(),
         html_encode=true        :: html_encode(),
         mobile_target=false     :: boolean(),
@@ -372,12 +375,12 @@
 -record(option, {
         text=""                 :: text(),
         value=undefined         :: text() | atom() | undefined,
-        selected=false          :: boolean(),
+        selected                :: boolean() | undefined,
         show_if=true            :: boolean(),
         disabled=false          :: boolean()
     }).
 
--type short_option()        :: {text(), text()}.
+-type short_option()        :: {text(), text()} | text().
 -record(option_group, {
         text=""                 :: text(),
         options=[]              :: [#option{} | short_option()],
@@ -495,6 +498,24 @@
         alt                     :: text(),
         width                   :: integer(),
         height                  :: integer()
+    }).
+-record(video, {?ELEMENT_BASE(element_video),
+        url=""                  :: url(),
+        poster_url=""           :: url(),
+        width=560               :: integer(),
+        height=315              :: integer(),
+        preload=metadata        :: auto | metadata | none,
+        loop=false              :: boolean(),
+        muted=false             :: boolean(),
+        autoplay=false          :: boolean(),
+        controls=false          :: boolean(),
+        body_no_support="Your browser does not support the video tag" :: body()
+    }).
+-record(youtube, {?ELEMENT_BASE(element_youtube),
+        width=560               :: integer(),
+        height=315              :: integer(),
+        key=""                  :: text(),
+        allowfullscreen=true    :: boolean()
     }).
 -record(lightbox, {?ELEMENT_BASE(element_lightbox),
         body=[]                 :: body()
@@ -632,7 +653,10 @@
         back="Back"             :: text(),
         finish="Finish"         :: text(),
         show_progress=true      :: boolean(),
-        progress_text="(Step ~p of ~p)" :: text()
+        progress_text="(Step ~p of ~p)" :: text(),
+        next_class=""           :: text() | [text()],
+        back_class=""           :: text() | [text()],
+        finish_class=""         :: text() | [text()]
     }).
 -record(sparkline, {?ELEMENT_BASE(element_sparkline),
         type=line               :: line | bar | tristate | bullet | discrete | pie | box,
@@ -909,6 +933,10 @@
 -record(function, {?ACTION_BASE(action_function),
         function                :: fun() | undefined
     }).
+-record(js_fun, {?ACTION_BASE(action_js_fun),
+        function                :: atom() | text(),
+        args=[]                 :: [text()]
+    }).
 -record(set, {?ACTION_BASE(action_set),
         value=""                :: text() | integer()
     }).
@@ -916,7 +944,8 @@
         values=[]               :: [text()]
     }).
 -record(redirect, {?ACTION_BASE(action_redirect),
-        url=""                  :: url()
+        url=""                  :: url(),
+        login=false             :: boolean() | url()
     }).
 -record(event, {?ACTION_BASE(action_event),
         type=default            :: atom(),
@@ -1045,7 +1074,13 @@
 -record(is_email, {?VALIDATOR_BASE(validator_is_email)}).
 -record(is_integer, {?VALIDATOR_BASE(validator_is_integer),
         min                     :: undefined | integer(),
-        max                     :: undefined | integer()
+        max                     :: undefined | integer(),
+        allow_blank=false       :: boolean()
+    }).
+-record(is_number, {?VALIDATOR_BASE(validator_is_number),
+        min                     :: undefined | integer(),
+        max                     :: undefined | integer(),
+        allow_blank=false       :: boolean()
     }).
 -record(min_length, {?VALIDATOR_BASE(validator_min_length),
         length                  :: undefined | integer()

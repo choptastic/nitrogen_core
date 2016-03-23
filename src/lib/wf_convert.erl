@@ -14,6 +14,7 @@
     to_binary/1,
     to_unicode_binary/1,
     to_integer/1,
+    to_float/1,
     to_string_list/1,
     to_qs/1,
     parse_qs/1,
@@ -100,6 +101,18 @@ to_integer(B) when is_binary(B) -> to_integer(binary_to_list(B));
 to_integer(I) when is_integer(I) -> I;
 to_integer(L) when is_list(L) -> list_to_integer(L);
 to_integer(F) when is_float(F) -> round(F).
+
+-spec to_float(term()) -> float().
+to_float(F) when is_float(F) -> F;
+to_float(I) when is_integer(I) -> float(I);
+to_float(T) when is_list(T);
+                 is_binary(T);
+                 is_atom(T) -> safe_to_float(wf:to_list(T)).
+
+safe_to_float(L) when is_list(L) ->
+    try list_to_float(L)
+    catch _:badarg -> float(list_to_integer(L))
+    end.
 
 %%% TO STRING LIST %%%
 
@@ -335,6 +348,8 @@ quote_plus(Int) when is_integer(Int) ->
     quote_plus(integer_to_list(Int));
 quote_plus(Bin) when is_binary(Bin) ->
     quote_plus(binary_to_list(Bin));
+quote_plus(Float) when is_float(Float) ->
+    quote_plus(mochinum:digits(Float));
 quote_plus(String) ->
     quote_plus(String, []).
 
@@ -378,10 +393,14 @@ json_decode(Json0) ->
     end.
 
 strip_json_struct({struct, List}) ->
-    [{K, strip_json_struct(V)} || {K, V} <- List];
+	strip_json_struct(List);
+strip_json_struct({Key, Value}) ->
+	{Key, strip_json_struct(Value)};
+strip_json_struct([H | T]) ->
+	[strip_json_struct(H) | strip_json_struct(T)];
 strip_json_struct(Other) ->
-    Other.
-    
+	Other.
+
 add_json_struct(Struct=[{_,_}|_]) ->
     {struct, [{K, add_json_struct(V)} || {K, V} <- Struct]};
 add_json_struct(Other) ->

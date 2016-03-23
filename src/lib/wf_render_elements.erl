@@ -48,9 +48,8 @@ render_element(Element) when is_tuple(Element) ->
     Base = wf_utils:get_elementbase(Element),
 
     % Verify that this is an element...
-    case Base#elementbase.is_element of
-        is_element -> ok;
-        _ -> throw({not_an_element, Element})
+    try is_element = Base#elementbase.is_element,
+    catch _:_ -> throw({not_an_element, Element})
     end,
 
     case Base#elementbase.show_if of

@@ -87,9 +87,9 @@
         event_handle_invalid/1,
 
         handlers/0,
-        handlers/1,
         handler/1,
         restore_handler/1,
+        set_handler/1,
 
         init_context/1,
         make_handler/2,
@@ -394,29 +394,59 @@ event_handle_invalid(HandleInvalid) ->
 %%% HANDLERS %%%
 
 handlers() ->
-    Context = context(),
-    Context#context.handler_list.
-
-handlers(Handlers) ->
-    Context = context(),
-    context(Context#context { handler_list = Handlers }).
+    C = context(),
+    [
+        C#context.config_handler,
+        C#context.log_handler,
+        C#context.process_registry_handler,
+        C#context.cache_handler,
+        C#context.query_handler,
+        C#context.crash_handler,
+        C#context.session_handler,
+        C#context.state_handler,
+        C#context.identity_handler,
+        C#context.role_handler,
+        C#context.route_handler,
+        C#context.security_handler
+    ].
 
 handler(HandlerName) ->
-    Handlers = handlers(),
-    case lists:keyfind(HandlerName, #handler_context.name, Handlers) of
-        false -> undefined;
-        HandlerContext -> HandlerContext
-    end.
+    get_handler(context(), HandlerName).
+
+set_handler(NewHandler) ->
+    NewContext = set_handler(context(), NewHandler),
+    context(NewContext).
 
 restore_handler(NewHandler) ->
-    Handlers = handlers(),
-    NewHandlers = [maybe_restore_handler(H, NewHandler) || H <- Handlers],
-    handlers(NewHandlers).
+    set_handler(NewHandler).
 
-maybe_restore_handler(Orig = #handler_context{name=Name}, New = #handler_context{name=Name}) ->
-    New#handler_context{config=Orig#handler_context.config};
-maybe_restore_handler(Orig, _New) ->
-    Orig.
+get_handler(#context{config_handler=H}, config_handler) -> H;
+get_handler(#context{log_handler=H}, log_handler) -> H;
+get_handler(#context{process_registry_handler=H}, process_registry_handler) -> H;
+get_handler(#context{cache_handler=H}, cache_handler) -> H;
+get_handler(#context{query_handler=H}, query_handler) -> H;
+get_handler(#context{crash_handler=H}, crash_handler) -> H;
+get_handler(#context{session_handler=H}, session_handler) -> H;
+get_handler(#context{state_handler=H}, state_handler) -> H;
+get_handler(#context{identity_handler=H}, identity_handler) -> H;
+get_handler(#context{role_handler=H}, role_handler) -> H;
+get_handler(#context{route_handler=H}, route_handler) -> H;
+get_handler(#context{security_handler=H}, security_handler) -> H;
+get_handler(C, Handler) ->
+    throw({unknown_handle, Handler}).
+
+set_handler(C,H = #handler_context{name=config_handler}) -> C#context{config_handler=H};
+set_handler(C,H = #handler_context{name=log_handler}) -> C#context{log_handler=H};
+set_handler(C,H = #handler_context{name=process_registry_handler}) -> C#context{process_registry_handler=H};
+set_handler(C,H = #handler_context{name=cache_handler}) -> C#context{cache_handler=H};
+set_handler(C,H = #handler_context{name=query_handler}) -> C#context{query_handler=H};
+set_handler(C,H = #handler_context{name=crash_handler}) -> C#context{crash_handler=H};
+set_handler(C,H = #handler_context{name=session_handler}) -> C#context{session_handler=H};
+set_handler(C,H = #handler_context{name=state_handler}) -> C#context{state_handler=H};
+set_handler(C,H = #handler_context{name=identity_handler}) -> C#context{identity_handler=H};
+set_handler(C,H = #handler_context{name=role_handler}) -> C#context{role_handler=H};
+set_handler(C,H = #handler_context{name=route_handler}) -> C#context{route_handler=H};
+set_handler(C,H = #handler_context{name=security_handler}) -> C#context{security_handler=H}.
 
 %% MAYBE DO THIS?
 %%serializable_handlers() ->
@@ -436,26 +466,7 @@ init_context(Bridge) ->
         bridge = Bridge,
         page_context = #page_context { series_id = wf:temp_id() },
         event_context = #event_context {},
-        action_queue = new_action_queue(),		
-        handler_list = [
-            % Core handlers...
-            make_handler(config_handler, default_config_handler), 
-            make_handler(log_handler, default_log_handler),
-            make_handler(process_registry_handler, nprocreg_registry_handler),
-            make_handler(cache_handler, default_cache_handler), 
-            make_handler(query_handler, default_query_handler),
-            make_handler(crash_handler, default_crash_handler),
-
-            % Stateful handlers...
-            make_handler(session_handler, simple_session_handler), 
-            make_handler(state_handler, default_state_handler), 
-            make_handler(identity_handler, default_identity_handler), 
-            make_handler(role_handler, default_role_handler), 
-
-            % Handlers that possibly redirect...
-            make_handler(route_handler, dynamic_route_handler), 
-            make_handler(security_handler, default_security_handler)
-        ]
+        action_queue = new_action_queue()
     },
     context(Context).
 

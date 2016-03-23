@@ -60,22 +60,18 @@ emit_tag(TagName, [], Props) when ?NO_SHORT_TAGS(TagName) ->
     emit_tag(TagName, Props);
 
 emit_tag(TagName, Content, Props) ->
-    STagName = wf:to_list(TagName),
+    STagName = wf:to_binary(TagName),
+    FormattedProps = write_props(Props), 
     [
-        "<", 
-        STagName, 
-        write_props(Props), 
-        ">", 
+        <<"<", STagName/binary, FormattedProps/binary, ">">>,
         Content,
-        "</", 
-        STagName, 
-        ">"
+        <<"</", STagName/binary, ">">>
     ].    
 
 %%% Property display functions %%%
 
 write_props(Props) ->
-    lists:map(fun display_property/1, Props).
+    wf:to_unicode_binary(lists:map(fun display_property/1, Props)).
 
 display_property(undefined) ->
     [];
@@ -122,7 +118,7 @@ display_property({"class", Values}) ->
     StrValues = wf:to_string_list(Values),
     StrValues1 = string:strip(string:join(StrValues, " ")),
     StrValues2 = wf_utils:replace(StrValues1, ".", ""),
-    [" class=\"", StrValues2, "\""];
+    [<<" class=\"">>, StrValues2, "\""];
 
 display_property({Prop, Value}) ->
     [" ", Prop, "=\"", Value, "\""].

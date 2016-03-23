@@ -92,6 +92,10 @@
     %serialize=true % whether or not to serialize and deserialize this handler during requests. Usually, just the state handler needs to be serialized.
 }).
 
+-define(HANDLER(Name, Module),
+    Name = #handler_context{name=Name, module=Module, state=[]}
+).
+
 -record(context, {
     % Transient Information
     type                    :: context_type(),
@@ -104,7 +108,23 @@
     % and de-serialized on each request.
     page_context            :: undefined | #page_context{},
     event_context           :: undefined | #event_context{},
-    handler_list            :: undefined | list()
+    % Core handlers
+    ?HANDLER(config_handler, default_config_handler),
+    ?HANDLER(log_handler, default_log_handler),
+    ?HANDLER(process_registry_handler, nprocreg_registry_handler),
+    ?HANDLER(cache_handler, default_cache_handler),
+    ?HANDLER(query_handler, default_query_handler),
+    ?HANDLER(crash_handler, default_crash_handler),
+
+    % Stateful handlers
+    ?HANDLER(session_handler, simple_session_handler),
+    ?HANDLER(state_handler, default_state_handler),
+    ?HANDLER(identity_handler, default_identity_handler),
+    ?HANDLER(role_handler, default_role_handler),
+
+    % Handlers that possibly redirect
+    ?HANDLER(route_handler, dynamic_route_handler),
+    ?HANDLER(security_handler, default_security_handler)
 }).
 
 %%% LOGGING %%%

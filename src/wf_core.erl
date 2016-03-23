@@ -195,8 +195,6 @@ deserialize_context(SerializedPageContext) ->
 call_init_on_handlers() ->
     %% Get initial handlers
     Handlers = wf_context:handlers(),
-    %% Clear Handler list, to re-initiate in order
-    wf_context:handlers([]),
     %% Re-initiate handlers in order, appending them back to the handler list as we go
     [wf_handler:init(X) || X <- Handlers],
     ok.

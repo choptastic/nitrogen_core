@@ -15,7 +15,7 @@
 init(H = #handler_context{module=Module, config=Config, state=State}) ->
     {ok, NewState} = Module:init(Config, State),
     NewH = H#handler_context{state=NewState},
-    append_handler_state(NewH).
+    wf_context:set_handler(NewH).
 
 -spec finish(#handler_context{}) -> ok.
 finish(H = #handler_context{}) ->
@@ -33,22 +33,22 @@ call(Name, FunctionName, Args) when is_atom(Name) ->
     Handler = get_handler(Name),
     call(Handler, FunctionName, Args);
 
-call(#handler_context{ name=Name, module=Module, config=Config, state=State }, FunctionName, Args) ->
+call(H = #handler_context{ module=Module, config=Config, state=State }, FunctionName, Args) ->
     Result = erlang:apply(Module, FunctionName, Args ++ [Config, State]),
 
     % Result will be {ok, State}, {ok, Value1, State}, or {ok, Value1, Value2, State}.
     % Update the context with the new state.
     case Result of
         {ok, NewState} -> 
-            update_handler_state(Name, State, NewState),
+            update_handler_state(H, State, NewState),
             ok;
 
         {ok, Value, NewState} ->
-            update_handler_state(Name, State, NewState),
+            update_handler_state(H, State, NewState),
             {ok, Value};
 
         {ok, Value1, Value2, NewState} ->
-            update_handler_state(Name, State, NewState),
+            update_handler_state(H, State, NewState),
             {ok, Value1, Value2}
     end.
 
@@ -67,7 +67,7 @@ set_handler(Module, Config) ->
     L = Module:module_info(attributes),
     Name = case proplists:get_value(behaviour, L) of
         [N] -> N;
-        _      -> throw({must_define_a_nitrogen_behaviour, Module})
+        _   -> throw({must_define_a_nitrogen_behaviour, Module})
     end,
     set_handler(Name, Module, Config).
 
@@ -75,32 +75,14 @@ set_handler(Module, Config) ->
 % set_handler/3
 % Set the configuration for a handler.
 set_handler(Name, Module, Config) ->
-    Handlers = wf_context:handlers(),
-    OldHandler = lists:keyfind(Name, 2, Handlers),
-    NewHandler = OldHandler#handler_context { module=Module, config=Config },
-    NewHandlers = lists:keyreplace(Name, 2, Handlers, NewHandler),
-    wf_context:handlers(NewHandlers).	
+    wf_context:set_handler(#handler_context{name=Name, module=Module, config=Config}).
 
 % get_handler/2 - 
 % Look up a handler in a context. Return {ok, HandlerModule, State}
 get_handler(Name) -> 
-    Handlers = wf_context:handlers(),
-    case lists:keyfind(Name, 2, Handlers) of
-        Handler when is_record(Handler, handler_context) -> 
-            Handler;
-        false -> 
-            throw({handler_not_found_in_context, Name, Handlers})
-    end.
+    wf_context:handler(Name).
 
-update_handler_state(_Name, OrigState, OrigState) ->
+update_handler_state(_H, OrigState, OrigState) ->
     ok;
-update_handler_state(Name, _OrigState, State) ->
-    Handlers = wf_context:handlers(),
-    OldHandler = lists:keyfind(Name, 2, Handlers),
-    NewHandler = OldHandler#handler_context { state=State },
-    NewHandlers = lists:keyreplace(Name, 2, Handlers, NewHandler),
-    wf_context:handlers(NewHandlers).
-
-append_handler_state(State) ->
-    Handlers = wf_context:handlers(),
-    wf_context:handlers(Handlers ++ [State]).
+update_handler_state(H, _OrigState, NewState) ->
+    wf_context:set_handler(H#handler_context{state=NewState}).

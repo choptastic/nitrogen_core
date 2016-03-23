@@ -17,6 +17,7 @@
 render_elements(Elements) ->
     {ok, inner_render_elements(Elements)}.
 
+
 -spec inner_render_elements(E :: body()) -> html().
 inner_render_elements(undefined) ->
     [];
@@ -136,6 +137,7 @@ extract_class(#elementbase{class=Class}, ID, Anchor) ->
                           Element :: nitrogen_element() ) -> html().
 call_element_render(RenderOrTransform, Module, Element) ->
     NewElements = Module:RenderOrTransform(Element),
+    %error_logger:info_msg("ReRendering: ~p",[NewElements]),
     inner_render_elements(NewElements).
 
 -spec normalize_id(list()) -> string().

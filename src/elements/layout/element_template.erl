@@ -188,7 +188,12 @@ convert_callback_tuple_to_function(Module, Function, ArgString, Bindings, Module
                 ]});
             {module, Module1} ->
                 case erlang:function_exported(Module1, Function, length(Args)) of
-                    true -> _Elements = erlang:apply(Module1, Function, Args);
+                    true ->
+                        _Elements = erlang:apply(Module1, Function, Args),
+                        %{Time, _Elements} = timer:tc(Module1, Function, Args),
+                        %eprof:profile([], Module1, Function, Args),
+                        %io:format("~p:~p(~p) -> ~p~n", [Module1, Function, Args, Time]),
+                        _Elements;
                     false -> undefined
                 end
         end

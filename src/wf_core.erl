@@ -125,6 +125,7 @@ maybe_render_elements(Elements) ->
     %io:format("Render Time: ~p~n",[Time]),
     %{ok, Html}.
     {ok, _Html} = wf_render_elements:render_elements(Elements).
+    %{ok, _Html} = fprof:apply(wf_render_elements,render_elements,[Elements]).
 
 
 finish_websocket_request() ->
@@ -259,9 +260,16 @@ build_static_file_response(Path) ->
     Bridge1 = sbw:set_response_file(Path, Bridge),
     sbw:build_response(Bridge1).
 
+%count_sub_elements([H|T]) ->
+%    1 + count_sub_elements(H) + count_sub_elements(T);
+%count_sub_elements(_) ->
+%    1.
+
 build_first_response(Html, Script) ->
     % Update the output with any script...
-    Html1 = replace_script(Script, Html),
+    {Time, Html1} = timer:tc(fun replace_script/2, [Script, Html]),
+    %Els = count_sub_elements(Html1),
+    %io:format("time to replace script (size: ~p): ~p~n",[Html, Time]),
     Html2 = encode(Html1),
 
     % Update the response bridge and return.
@@ -277,7 +285,8 @@ build_postback_response(Script) ->
     Bridge1 = sbw:set_response_data(Script1, Bridge),
     sbw:build_response(Bridge1).
 
-replace_script(_,Html) when ?IS_STRING(Html) -> Html;
+%replace_script(_,Html) when ?IS_STRING(Html) -> Html;
+replace_script(_,Html=[H|_]) when is_integer(H) -> Html;
 replace_script(Script, [script|T]) -> [Script|T];
 %% For the mobile_script, it's necessary that it's inside the data-role attr,
 %% and therefore must be escaped before it can be sent to the browser

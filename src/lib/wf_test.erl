@@ -12,6 +12,9 @@
     enable_autoadvance/0,
     disable_autoadvance/0,
 
+    set_var/2,
+    get_var/1,
+
     test_manual/2,
     test_manual/3,
     test_manual/4,
@@ -112,6 +115,12 @@ enable_autoadvance() ->
 
 disable_autoadvance() ->
     wf_test_srv:set_autoadvance(false).
+
+set_var(Var, Value) ->
+    wf_test_srv:set_var(Var, Value).
+
+get_var(Var) ->
+    wf_test_srv:get_var(Var).
 
 test_manual(Name, {Setup, Assertion}) ->
     test_manual(Name, Setup, Assertion);

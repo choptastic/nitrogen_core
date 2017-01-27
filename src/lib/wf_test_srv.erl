@@ -14,6 +14,8 @@
     passed/1,
     failed/1,
     set_autoadvance/1,
+    set_var/2,
+    get_var/1,
     next_test_path/0,
     get_summary/0,
     stop/0
@@ -29,7 +31,15 @@
     code_change/3
 ]).
 
--record(state, {trigger, autoadvance=true, test_paths=[], current_test, passed=0, failed=0}).
+-record(state, {
+    trigger,
+    autoadvance=true,
+    test_paths=[],
+    current_test,
+    passed=0,
+    failed=0,
+    vars=dict:new()
+}).
 
 main() ->
     Trigger = wf:to_integer(wf:q(id)),
@@ -85,6 +95,12 @@ failed(Num) ->
 set_autoadvance(TF) when is_boolean(TF) ->
     gen_server:cast(?MODULE, {set_autoadvance, TF}).
 
+set_var(Var, Value) ->
+    gen_server:cast(?MODULE, {set_var, Var, Value}).
+
+get_var(Var) ->
+    gen_server:call(?MODULE, {get_var, Var}).
+
 next_test_path() ->
     case gen_server:call(?MODULE, next_test_path) of
         {ok, Next} ->
@@ -124,6 +140,12 @@ handle_call(next_test_path, _From, State=#state{test_paths=[Next | Rest]}) ->
 handle_call(next_test_path, _From, State=#state{test_paths=[]}) ->
     Reply = undefined,
     {reply, Reply, State#state{current_test=undefined}, ?TIMEOUT};
+handle_call({get_var, Var}, _From, State=#state{vars=Vars}) ->
+    Reply = case dict:find(Var, Vars) of
+        {ok, Val} -> Val;
+        error -> undefined
+    end,
+    {reply, Reply, State, ?TIMEOUT};
 handle_call(summary, _From, State=#state{passed=Passed, failed=Failed}) ->
     Reply = {ok, [{passed, Passed}, {failed, Failed}]},
     {reply, Reply, State, ?TIMEOUT}.
@@ -134,6 +156,9 @@ handle_cast({passed, Num}, State=#state{passed=Cur}) ->
     {noreply, State#state{passed=Cur+Num}, ?TIMEOUT};
 handle_cast({failed, Num}, State=#state{failed=Cur}) ->
     {noreply, State#state{failed=Cur+Num}, ?TIMEOUT};
+handle_cast({set_var, Var, Value}, State=#state{vars=Vars}) ->
+    NewVars = dict:store(Var, Value, Vars),
+    {noreply, State#state{vars=NewVars}, ?TIMEOUT};
 handle_cast(stop, State) ->
     {stop, normal, State}.
 

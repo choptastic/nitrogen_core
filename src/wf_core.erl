@@ -18,10 +18,11 @@
 
 run() ->
     Bridge = wf_context:bridge(),
-    try 
+    Res = try 
         case Bridge:error() of
             none -> run_catched();
             Other -> 
+                wf_stats:inc_crashes(),
                 Message = wf:f("Errors: ~p~n", [Other]),
                 Bridge1 = Bridge:set_response_data(Message),
                 Bridge1:build_response()
@@ -30,8 +31,11 @@ run() ->
         exit:normal ->
             exit(normal);
         Type : Error -> 
+            wf_stats:inc_crashes(),
             run_crash(Bridge, Type, Error, erlang:get_stacktrace())
-    end.
+    end,
+    wf_stats:unreg_self(),
+    Res.
 
     
 
@@ -57,6 +61,7 @@ run_crash(Bridge, Type, Error, Stacktrace) ->
     end.
 
 init_websocket(SerializedPageContext) ->
+    wf_stats:reg_self(),
     deserialize_websocket_context(SerializedPageContext),
     wf_context:async_mode({websocket, self()}),
     call_init_on_handlers().
@@ -72,6 +77,7 @@ run_websocket_crash(Type, Error, Stacktrace) ->
 
 run_websocket_comet() ->
     wf_context:type(postback_websocket),
+    wf_stats:inc_core(postback_websocket),
     _ToSend = wf:to_unicode_binary(finish_websocket_request()).
 
 run_websocket(Data) ->
@@ -84,8 +90,11 @@ run_catched() ->
     deserialize_request_context(),
     call_init_on_handlers(),
     wf_event:update_context_with_event(wf:q(eventContext)),
-    case wf_context:type() of
-        first_request    -> 
+    Type = wf_context:type(),
+    wf_stats:inc_core(Type),
+    wf_stats:reg_self(Type),
+    Res = case Type of
+        first_request -> 
             run_first_request(), 
             finish_dynamic_request();
         postback_request -> 
@@ -93,7 +102,9 @@ run_catched() ->
             finish_dynamic_request();
         static_file      -> 
             finish_static_request()
-    end.
+    end,
+    wf_stats:unreg_self(),
+    Res.
 
 finish_dynamic_request() ->
     Elements = wf_context:data(),

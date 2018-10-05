@@ -32,7 +32,7 @@
     TagName =/= 'h6' andalso
     TagName =/= 'iframe')).
 
--export ([emit_tag/2, emit_tag/3, html_name/2]).
+-export ([emit_tag/2, emit_tag/3, emit_tag_parts/2, emit_tag_parts/3, html_name/2]).
 
 html_name(Id, Name)
   when Id =:= [] orelse
@@ -46,6 +46,17 @@ html_name(Id, Name) ->
     end.
 
 %%%  Empty tags %%%
+
+emit_tag_parts(TagName, Props) ->
+    {emit_tag(TagName, Props), <<>>, <<>>}.
+   
+
+emit_tag_parts(TagName, Content, Props) ->
+    STagName = wf:to_list(TagName),
+    OpenTag = wf:to_unicode_binary(["<", STagName, write_props(Props),">"]),
+    CloseTag = wf:to_unicode_binary(["</", STagName, ">"]),
+    {OpenTag, Content, CloseTag}.
+
 
 emit_tag(TagName, Props) ->
     STagName = wf:to_list(TagName),
@@ -128,7 +139,7 @@ display_property({"class", Values}) ->
     StrValues = wf:to_string_list(Values),
     StrValues1 = string:strip(string:join(StrValues, " ")),
     StrValues2 = wf_utils:replace(StrValues1, ".", ""),
-    [" class=\"", StrValues2, "\""];
+    ?WF_IF(StrValues2=/="", [" class=\"", StrValues2, "\""]);
 
 display_property({Prop, Value}) ->
     [" ", Prop, "=\"", Value, "\""].
@@ -136,6 +147,8 @@ display_property({Prop, Value}) ->
 
 
 %% 
+data_tags(undefined) ->
+    [];
 data_tags(Data) ->
     [display_property(data_tag(Datum)) || Datum <- Data].
 

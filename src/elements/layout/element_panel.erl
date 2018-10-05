@@ -8,7 +8,8 @@
 -include("wf.hrl").
 -export([
     reflect/0,
-    render_element/1
+    render_element/1,
+    precompile_element/1
 ]).
 
 -spec reflect() -> [atom()].
@@ -27,3 +28,14 @@ render_element(Record) ->
         {style, Record#panel.style},
         {data_fields, Record#panel.data_fields}
     ]).
+
+precompile_element(Form = {record, Line, panel, Fields}) ->
+    Precomp = #precomp_element{
+        form=Form,
+        line=Line,
+        record=panel,
+        fields=Fields,
+        htmltag='div'
+    },
+    wf_element_precompile:simple_precompile(Precomp).
+

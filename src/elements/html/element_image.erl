@@ -7,7 +7,8 @@
 -include("wf.hrl").
 -export([
     reflect/0,
-    render_element/1
+    render_element/1,
+    precompile_element/1
 ]).
 
 -spec reflect() -> [atom()].
@@ -28,3 +29,13 @@ render_element(Record) ->
     ],
 
     wf_tags:emit_tag(img, Attributes).
+
+
+precompile_element(Form) ->
+    AddAttrMap = [
+        {src, image},
+        {height, height},
+        {weidth, width},
+        {alt, alt}
+    ],
+    wf_element_precompile:default_precompile_element(Form, img, AddAttrMap, []).

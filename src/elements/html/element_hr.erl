@@ -7,7 +7,8 @@
 -include("wf.hrl").
 -export([
     reflect/0,
-    render_element/1
+    render_element/1,
+    precompile_element/1
 ]).
 
 -spec reflect() -> [atom()].
@@ -23,3 +24,7 @@ render_element(Record) ->
         {style, Record#hr.style},
         {data_fields, Record#hr.data_fields}
     ]).
+
+
+precompile_element(Form) ->
+    wf_element_precompile:default_precompile_element(Form, hr).

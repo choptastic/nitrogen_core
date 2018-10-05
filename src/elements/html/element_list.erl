@@ -7,7 +7,8 @@
 -include("wf.hrl").
 -export([
     reflect/0,
-    render_element/1
+    render_element/1,
+    precompile_element/1
 ]).
 
 -spec reflect() -> [atom()].
@@ -27,3 +28,11 @@ render_element(Record) ->
         {style, Record#list.style},
         {data_fields, Record#list.data_fields}
     ]).
+
+
+precompile_element(Form = {record, _, _, Fields}) ->
+    Tag = case nitrogen_precompile:attr_n(Fields, numbered) of
+        true -> ol;
+        _ -> ul
+    end,
+    wf_element_precompile:default_precompile_element(Form, Tag).

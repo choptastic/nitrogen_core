@@ -7,7 +7,9 @@
 -include("wf.hrl").
 -export([
     reflect/0,
-    render_element/1
+    render_element/1,
+    precompile_element/1
+
 ]).
 
 -spec reflect() -> [atom()].
@@ -28,3 +30,6 @@ render_element(Record) ->
         {title, wf:html_encode(Record#span.title, Record#span.html_encode)},
         {data_fields, Record#span.data_fields}
     ]).
+
+precompile_element(Form) ->
+    wf_element_precompile:default_precompile_element(Form, span).

@@ -163,6 +163,16 @@
 
 %%% FRAMEWORK %%%
 
+-record(precomp_element, {
+    form=undefined              :: tuple(), %% The actual abstract form of the whole element
+    line                        :: integer(),
+    fields=[]                   :: [tuple()], %% List of the fields in abstract form
+    record                      :: atom(),
+    htmltag                     :: atom(),
+    additional_attribute_map=[] :: [{atom(), text() | atom()}],
+    disqualifying_fields=[]     :: [atom()]
+}).
+
 %%% Elements %%%
 -define(ELEMENT_BASE(Module),
         %% attribute is_element should only ever be the atom `is_element` but

@@ -7,7 +7,8 @@
 -include("wf.hrl").
 -export([
     reflect/0,
-    render_element/1
+    render_element/1,
+    precompile_element/1
 ]).
 
 -spec reflect() -> [atom()].
@@ -60,3 +61,16 @@ render_element(Record) ->
 
 add_field(true,ToAdd,DataFields) -> [ToAdd | DataFields];
 add_field(_,_,DataFields) -> DataFields.
+
+
+precompile_element(Form) ->
+    %New = nitrogen_precompile:attr_n(Form, new),
+    %Target = ?WF_IF(New==true, "_blank", ""),
+
+    AttrMap = [
+        {href, url}
+        %{target, Target},
+    ],
+    Disq = [click],
+
+    wf_element_precompile:default_precompile_element(Form, a, AttrMap, Disq).

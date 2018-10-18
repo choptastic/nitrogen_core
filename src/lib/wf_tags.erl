@@ -53,8 +53,8 @@ emit_tag_parts(TagName, Props) ->
 
 emit_tag_parts(TagName, Content, Props) ->
     STagName = wf:to_list(TagName),
-    OpenTag = wf:to_unicode_binary(["<", STagName, write_props(Props),">"]),
-    CloseTag = wf:to_unicode_binary(["</", STagName, ">"]),
+    OpenTag = ["<", STagName, write_props(Props),">"],
+    CloseTag = ["</", STagName, ">"],
     {OpenTag, Content, CloseTag}.
 
 

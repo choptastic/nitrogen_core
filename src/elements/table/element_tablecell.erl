@@ -7,7 +7,8 @@
 -include("wf.hrl").
 -export([
     reflect/0,
-    render_element/1
+    render_element/1,
+    precompile_element/1
 ]).
 
 -spec reflect() -> [atom()].
@@ -31,3 +32,13 @@ render_element(Record) ->
         {rowspan, Record#tablecell.rowspan},
         {data_fields, Record#tablecell.data_fields}
     ]).
+
+precompile_element(Form) ->
+    AddAttrMap = [
+        {align, align},
+        {valign, valign},
+        {colspan, colspan},
+        {rowspan, rowspan}
+    ],
+    wf_element_precompile:default_precompile_element(Form, td, AddAttrMap, []).
+

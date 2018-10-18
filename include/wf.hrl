@@ -170,7 +170,8 @@
     record                      :: atom(),
     htmltag                     :: atom(),
     additional_attribute_map=[] :: [{atom(), text() | atom()}],
-    disqualifying_fields=[]     :: [atom()]
+    disqualifying_fields=[]     :: [atom()],
+    body_field=body             :: atom()
 }).
 
 %%% Elements %%%

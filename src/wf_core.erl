@@ -98,6 +98,7 @@ run_catched() ->
 finish_dynamic_request() ->
     Elements = wf_context:data(),
     wf_context:clear_data(),
+    %wf:info("Elements: ~p",[Elements]),
     {ok, Html} = maybe_render_elements(Elements),
 	{ok, Javascript} = wf_render_actions:render_action_queue(),
 
@@ -121,10 +122,10 @@ maybe_render_elements(Elements = {stream, Size, Fun}) when is_integer(Size), is_
     %% simple_bridge (currently only works with cowboy)
     {ok, Elements};
 maybe_render_elements(Elements) ->
-    %{Time, {ok, Html}} = timer:tc(wf_render_elements, render_elements, [Elements]),
+    {Time, {ok, Html}} = timer:tc(wf_render_elements, render_elements, [Elements]),
     %io:format("Render Time: ~p~n",[Time]),
-    %{ok, Html}.
-    {ok, _Html} = wf_render_elements:render_elements(Elements).
+    {ok, Html}.
+    %{ok, _Html} = wf_render_elements:render_elements(Elements).
 
 
 finish_websocket_request() ->

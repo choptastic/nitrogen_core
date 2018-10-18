@@ -7,7 +7,8 @@
 -include("wf.hrl").
 -export([
     reflect/0,
-    render_element/1
+    render_element/1,
+    precompile_element/1
 ]).
 
 -spec reflect() -> [atom()].
@@ -37,3 +38,10 @@ render_element(Record) ->
         {style, Record#table.style},
         {data_fields, Record#table.data_fields}
     ]).
+
+precompile_element(Form) ->
+    AddAttrMap = [
+        {border, border}
+    ],
+    wf_element_precompile:default_precompile_element(Form, table, AddAttrMap, [header, footer], [{body_field, rows}]).
+

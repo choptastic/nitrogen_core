@@ -91,7 +91,8 @@ signkey() ->
 % schemes, and how browsers all treat cookie quoting differently.
 %
 % See https://github.com/mochi/mochiweb/blob/master/src/mochiweb_cookies.erl#L98
-modified_base64_encode(B) -> m_b64_e(base64:encode(B), <<>>).
+modified_base64_encode(B) ->b64fast:encode64(B).
+%modified_base64_encode(B) -> m_b64_e(b64fast:encode64(B), <<>>).
 m_b64_e(<<>>, Acc) -> Acc;
 m_b64_e(<<$+, Rest/binary>>, Acc) -> m_b64_e(Rest, <<Acc/binary, $->>);
 m_b64_e(<<$/, Rest/binary>>, Acc) -> m_b64_e(Rest, <<Acc/binary, $_>>);
@@ -101,7 +102,8 @@ m_b64_e(<<H,  Rest/binary>>, Acc) -> m_b64_e(Rest, <<Acc/binary, H>>).
 -spec modified_base64_decode(binary()) -> binary().
 % @doc Replace '-' and '_' with '+' and '/', respectively.  Pad with '=' to a
 % multiple of 4 chars.
-modified_base64_decode(B) -> base64:decode(m_b64_d(B, <<>>)).
+modified_base64_decode(B) -> b64fast:decode64(B).
+%modified_base64_decode(B) -> b64fast:decode64(m_b64_d(B, <<>>)).
 m_b64_d(<<>>, Acc) when size(Acc) rem 4 == 0 -> Acc;
 m_b64_d(<<>>, Acc) when size(Acc) rem 4 /= 0 -> m_b64_d(<<>>, <<Acc/binary, $=>>);
 m_b64_d(<<$-, Rest/binary>>, Acc) -> m_b64_d(Rest, <<Acc/binary, $+>>);

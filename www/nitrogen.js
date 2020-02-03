@@ -1353,6 +1353,20 @@ NitrogenClass.prototype.$attempt_websockets = function() {
     });
 };
 
+NitrogenClass.prototype.$fix_jquery_mobile_ids = function() {
+    $('input[type=button]').each(function(i, el) {
+        var classes = $(el).attr('class').split(/\s+/);
+        $.each(classes, function(ii, c) {
+            // if starts with wfid
+            if(!$(el).parent.hasClass(c)) {
+                console.log("Adding Class " + c);
+                $(el).parent.addClass(c);
+            }
+        });
+    });
+}
+        
+
 var page = document;
 
 var Nitrogen = new NitrogenClass();

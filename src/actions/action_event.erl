@@ -29,8 +29,7 @@ render_action(#event {
 
     ValidationGroup1 = wf:coalesce([ValidationGroup, Trigger]),
     AnchorScript = wf_render_actions:generate_anchor_script(Anchor, Target), 
-    PostbackScript = wf_event:generate_postback_script(Postback, Anchor, ValidationGroup1, HandleInvalid, OnInvalid, Delegate, ExtraParam),
-    SystemPostbackScript = wf_event:generate_system_postback_script(Postback, Anchor, ValidationGroup1, HandleInvalid, Delegate),
+    PostbackScript = generate_postback_script(Type, Postback, Anchor, ValidationGroup1, HandleInvalid, OnInvalid, Delegate, ExtraParam),
     {EffectiveType, EffectiveKeyCode} = effective_type_and_keycode(Type, KeyCode),
     WireAction = #wire { trigger=Trigger, target=Target, actions=Actions },
 
@@ -40,7 +39,7 @@ render_action(#event {
         % Trigger a system postback immediately...
         system when Delay == 0 ->
             [
-                AnchorScript, SystemPostbackScript, WireAction
+                AnchorScript, PostbackScript, WireAction
             ];
 
         % Trigger a system postback after some delay...
@@ -48,7 +47,7 @@ render_action(#event {
             TempID = wf:temp_id(),
             [
                 AnchorScript,
-                wf:f(<<"document.~s = function() {">>, [TempID]), SystemPostbackScript, WireAction, "};",
+                wf:f(<<"document.~s = function() {">>, [TempID]), PostbackScript, WireAction, "};",
                 wf:f(<<"setTimeout(\"document.~s(); document.~s=null;\", ~p);">>, [TempID, TempID, Delay])
             ];
 
@@ -96,6 +95,12 @@ render_action(#event {
             ]
     end,
     Script.
+
+
+generate_postback_script(system, Postback, Anchor, ValidationGroup1, HandleInvalid, _OnInvalid, Delegate, _ExtraParam) ->
+    wf_event:generate_system_postback_script(Postback, Anchor, ValidationGroup1, HandleInvalid, Delegate);
+generate_postback_script(_, Postback, Anchor, ValidationGroup1, HandleInvalid, OnInvalid, Delegate, ExtraParam) ->
+    wf_event:generate_postback_script(Postback, Anchor, ValidationGroup1, HandleInvalid, OnInvalid, Delegate, ExtraParam).
 
 %% Simple conversion of convenience events enterkey and tabkey
 effective_type_and_keycode(enterkey, _) -> {keydown, 13};

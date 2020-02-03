@@ -127,7 +127,7 @@ display_property({Prop, Value}) when is_integer(Value); is_atom(Value); is_float
 display_property({"class", Values}) ->
     StrValues = wf:to_string_list(Values),
     StrValues1 = string:strip(string:join(StrValues, " ")),
-    StrValues2 = wf_utils:replace(StrValues1, ".", ""),
+    StrValues2 = wf_utils:remove_all(StrValues1, $.),
     [" class=\"", StrValues2, "\""];
 
 display_property({Prop, Value}) ->

@@ -10,6 +10,7 @@
     guid/0, short_guid/0,
     path_search/3,
     replace/3,
+    remove_all/2,
     coalesce/1,
     is_process_alive/1,
     debug/0, break/0,
@@ -104,6 +105,13 @@ replace(String, S1, S2) when is_list(String), is_list(S1), is_list(S2) ->
             [hd(String)|replace(tl(String), S1, S2)]
     end.
 
+remove_all([Char|T], Char) ->
+    remove_all(T, Char);
+remove_all([H|T], Char) ->
+    [H | remove_all(T, Char)];
+remove_all([], _) ->
+    [].
+
 
 %%% COALESCE %%%
 
@@ -115,15 +123,15 @@ coalesce([H|_]) -> H.
 
 %%% BASE RECORDS %%%
 
-get_actionbase(Term) -> ?COPY_TO_BASERECORD(actionbase, size(#actionbase{}), Term).
-get_elementbase(Term) -> ?COPY_TO_BASERECORD(elementbase, size(#elementbase{}), Term).
-get_validatorbase(Term) -> ?COPY_TO_BASERECORD(validatorbase, size(#validatorbase{}), Term).
+get_actionbase(Term) -> ?COPY_TO_BASERECORD(actionbase, tuple_size(#actionbase{}), Term).
+get_elementbase(Term) -> ?COPY_TO_BASERECORD(elementbase, tuple_size(#elementbase{}), Term).
+get_validatorbase(Term) -> ?COPY_TO_BASERECORD(validatorbase, tuple_size(#validatorbase{}), Term).
 
 replace_with_base(Base, Record) -> 
     RecordType = element(1, Record),
     BaseMiddle = tl(tuple_to_list(Base)),
-    Start = size(Base) + 1,
-    Len = size(Record) - Start + 1,
+    Start = tuple_size(Base) + 1,
+    Len = tuple_size(Record) - Start + 1,
     RecordEnd = lists:sublist(tuple_to_list(Record), Start, Len),
     list_to_tuple([RecordType] ++ BaseMiddle ++ RecordEnd).
 
@@ -258,4 +266,5 @@ get_behaviours(Module) ->
     end, [], Attributes).
 
 ensure_loaded(Module) ->
-    wf:cache({ensure_loaded, Module}, 1000, fun() -> code:ensure_loaded(Module) end).
+    code:ensure_loaded(Module).
+    %wf:cache({ensure_loaded, Module}, 1000, fun() -> code:ensure_loaded(Module) end).

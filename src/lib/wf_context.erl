@@ -258,9 +258,12 @@ clear_data() ->
 
 -spec add_action(Priority :: wire_priority(), Action :: actions()) -> ok.
 add_action(Priority, Action) when ?IS_ACTION_PRIORITY(Priority) ->
-    ActionQueue = action_queue(),
-    NewActionQueue = wf_action_queue:in(Priority, Action, ActionQueue),
-    action_queue(NewActionQueue).
+    with_context(fun(Context) ->
+        ActionQueue = Context#context.action_queue,
+        NewActionQueue = wf_action_queue:in(Priority, Action, ActionQueue),
+        NewContext = Context#context{action_queue=NewActionQueue},
+        {NewContext, ok}
+    end).
 
 actions() ->
     ActionQueue = action_queue(),
@@ -270,10 +273,12 @@ actions() ->
 
 -spec next_action() -> {ok, actions()} | empty.
 next_action() ->
-	ActionQueue = action_queue(),
+    Context = context(),
+	ActionQueue = Context#context.action_queue,
 	case wf_action_queue:out(ActionQueue) of
 		{ok, Action, NewActionQueue} ->
-            action_queue(NewActionQueue),
+            NewContext = Context#context{action_queue=NewActionQueue},
+            context(NewContext),
             {ok, Action};
 		{error, empty} ->
             empty
@@ -477,6 +482,14 @@ context() ->
     get(context).
 context(Context) -> 
     put(context, Context).
+
+
+-spec with_context(Fun :: fun()) -> any().
+with_context(Fun) ->
+    Context = context(),
+    {NewContext, Return} = Fun(Context),
+    context(NewContext),
+    Return.
 
 %% for debugging. Remove when ready
 increment(Key) ->

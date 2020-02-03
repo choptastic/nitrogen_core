@@ -41,28 +41,23 @@ render_actions(Actions, Anchor, Trigger, Target) ->
     Script = inner_render_actions(Actions, Anchor, Trigger, Target),
     {ok, Script}.
 
-% @doc note: inner_render_actions always returns a list of of binaries or strings.
+% @doc note: inner_render_actions always returns a list of binaries or strings.
 % This may not be necessary. But for now, we'll keep it like this.
 -spec inner_render_actions(Actions :: actions(),
                            Anchor :: id(),
                            Trigger :: id(),
                            Target :: id()) -> script().
-inner_render_actions(Actions, Anchor, Trigger, Target) ->
-    if 
-        Actions == [];
-        Actions==undefined -> 
-            [];
-        is_binary(Actions) orelse ?IS_STRING(Actions)   -> 
-            [Actions];
-        is_tuple(Actions) ->    
-            Script = inner_render_action(Actions, Anchor, Trigger, Target),
-            [Script];
-        is_list(Actions) ->
-            [inner_render_actions(hd(Actions), Anchor, Trigger, Target)|
-                inner_render_actions(tl(Actions), Anchor, Trigger, Target)];
-        true ->
-            throw({unanticipated_case_in_render_actions, Actions})
-    end.
+inner_render_actions([], _, _, _) -> [];
+inner_render_actions(undefined, _, _, _) -> [];
+inner_render_actions(Actions, _, _, _) when is_binary(Actions); ?IS_STRING(Actions) ->
+    [Actions];
+inner_render_actions(Actions, Anchor, Trigger, Target) when is_tuple(Actions) ->
+    Script = inner_render_action(Actions, Anchor, Trigger, Target),
+    [Script];
+inner_render_actions(Actions, Anchor, Trigger, Target) when is_list(Actions) ->
+    [inner_render_actions(A, Anchor, Trigger, Target) || A <- Actions];
+inner_render_actions(Actions, _, _, _) ->
+    throw({unanticipated_case_in_render_actions, Actions}).
 
 -spec inner_render_action(Action :: action_element(),
                           Anchor :: id(),
@@ -169,11 +164,11 @@ call_action_render(Module, Action, Anchor, Trigger, Target) ->
 % Turn an atom into ".wfid_atom"
 % Turn atom.atom... into ".wfid_atom .wfid_atom"
 % If it's a string, replace double "##" with ".wfid_"
--spec normalize_path(Path :: atom() | string() | binary()) -> string() | atom().
+-spec normalize_path(Path :: atom() | string() | binary()) -> string() | binary() | atom().
 normalize_path(undefined) -> 
     undefined;
 normalize_path(page) ->
-    "page";
+    <<"page">>;
 normalize_path(Path) when is_atom(Path) ->
     String = atom_to_list(Path),
     Tokens = string:tokens(String, "."),
@@ -181,12 +176,11 @@ normalize_path(Path) when is_atom(Path) ->
     string:join(Tokens1, " ");
 normalize_path(String) when is_binary(String) ->
     normalize_path(binary_to_list(String));
+normalize_path("wfid_" ++ String) -> "." ++ String;
+normalize_path("temp" ++ String) -> ".wfid_" ++ String;
 normalize_path(String) ->
-    case String of
-        "wfid_" ++ _ -> "." ++ String;
-        "temp" ++ _ -> ".wfid_" ++ String;
-        _ -> wf_utils:replace(String, "##", ".wfid_")
-    end.
+    re:replace(String, "##", ".wfid_", [global, {return, binary}]).
+    %wf_utils:replace(String, "##", ".wfid_").
 
 -spec to_js_id(P :: [string()]) -> string().
 to_js_id(P) ->

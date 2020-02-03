@@ -36,6 +36,9 @@ render_elements(Elements) ->
 -spec inner_render_elements(E :: body()) -> html().
 inner_render_elements(undefined) ->
     [];
+inner_render_elements(E)
+    when is_integer(E); is_binary(E); ?IS_STRING(E)->
+    E;
 inner_render_elements(Es) when is_list(Es) ->
     [inner_render_elements(E) || E <- Es];
 inner_render_elements(E) when is_tuple(E) ->
@@ -46,9 +49,6 @@ inner_render_elements(script) ->
     script;
 inner_render_elements(Atom) when is_atom(Atom) ->
     wf:to_binary(Atom);
-inner_render_elements(E)
-    when is_integer(E); is_binary(E); ?IS_STRING(E)->
-    E;
 inner_render_elements(Unknown) ->
     throw({unanticipated_case_in_render_elements, Unknown}).
 
@@ -104,7 +104,7 @@ prepare_and_render(Module, Base, Element) ->
     %     an unnecessary 'tempABCXYZ' class.
         
     % Get the anchor, ID, and Class, or create a new ones if not defined...
-    Anchor = extract_anchor(Base),
+    Anchor = undefined, %extract_anchor(Base),
     ID = extract_id(Base, Anchor),
     Class = extract_class(Base, Anchor, ID),
 

@@ -71,19 +71,19 @@ generate_postback_script(undefined, _Anchor, _ValidationGroup, _HandleInvalid, _
 generate_postback_script(Postback, Anchor, ValidationGroup, HandleInvalid, OnInvalid, Delegate, ExtraParam) ->
     PickledPostbackInfo = serialize_event_context(Postback, Anchor, ValidationGroup, HandleInvalid, Delegate),
     OnInvalidScript = case OnInvalid of
-        undefined -> "null";
-        _         -> ["function(){", OnInvalid, "}"]
+        undefined -> <<"null">>;
+        _         -> [<<"function(){">>, OnInvalid, <<"}">>]
     end,
     [
-        wf:f("Nitrogen.$queue_event('~s', ", [ValidationGroup]),
+        wf:f(<<"Nitrogen.$queue_event('~s', ">>, [ValidationGroup]),
         OnInvalidScript,
-        wf:f(", '~s', ~s);", [PickledPostbackInfo, ExtraParam])
-    ].
+        wf:f(<<", '~s', ~s);">>, [PickledPostbackInfo, ExtraParam])
+    ]. %.
 
 generate_system_postback_script(undefined, _Anchor, _ValidationGroup, _HandleInvalid, _Delegate) -> [];
 generate_system_postback_script(Postback, Anchor, ValidationGroup, HandleInvalid, Delegate) ->
     PickledPostbackInfo = serialize_event_context(Postback, Anchor, ValidationGroup, HandleInvalid, Delegate),
-    wf:f("Nitrogen.$queue_system_event('~s');", [PickledPostbackInfo]).
+    <<"Nitrogen.$queue_system_event('",PickledPostbackInfo/binary,"<<');">>. %, [PickledPostbackInfo]).
 
 serialize_event_context(Tag, Anchor, ValidationGroup, HandleInvalid, Delegate) ->
     PageModule = wf_context:page_module(),

@@ -44,11 +44,11 @@ render_action(#event {
 
         % Trigger a system postback after some delay...
         system ->
-            TempID = wf:temp_id(),
+            TempID = wf:to_binary(wf:temp_id()),
             [
-                AnchorScript,
-                wf:f(<<"document.~s = function() {">>, [TempID]), PostbackScript, WireAction, "};",
-                wf:f(<<"setTimeout(\"document.~s(); document.~s=null;\", ~p);">>, [TempID, TempID, Delay])
+                <<AnchorScript/binary, "document.",TempID/binary,"  = function() {">>,
+                    PostbackScript, WireAction,
+                <<"}; setTimeout(\"document.",TempID/binary,"(); document.",TempID,"=null;\", ",(wf:to_binary(Delay))/binary,");">>
             ];
 
         %% USER EVENTS %%%
@@ -56,7 +56,7 @@ render_action(#event {
         % Handle keypress, keydown, or keyup when a keycode is defined...
         _ when ((EffectiveType==keypress orelse EffectiveType==keydown orelse EffectiveType==keyup) andalso (EffectiveKeyCode /= undefined)) ->
             [
-                wf:f(<<"Nitrogen.$observe_event('~s', '~s', '~s', function(event) {">>, [Anchor, Trigger, EffectiveType]),
+                <<"Nitrogen.$observe_event('~s', '~s', '~s', function(event) {">>, [Anchor, Trigger, EffectiveType]),
                     wf:f(<<"if (Nitrogen.$is_key_code(event, ~p, ~p)) { ">>, [EffectiveKeyCode, ShiftKey]),
                         AnchorScript, PostbackScript, WireAction, 
                         %wf:f("alert('~p:~p');",[EffectiveType, EffectiveKeyCode]),
@@ -69,8 +69,8 @@ render_action(#event {
             TempID = wf:temp_id(),
             [
                 wf:f(<<"document.~s = function() {">>, [TempID]), 
-                AnchorScript, PostbackScript, WireAction, 
-                    <<"};">>,
+                    AnchorScript, PostbackScript, WireAction, 
+                <<"};">>,
                 wf:f(<<"setTimeout(\"document.~s(); document.~s=null;\", ~p);">>, [TempID, TempID, Delay])
             ];
 

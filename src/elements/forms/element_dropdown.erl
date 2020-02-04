@@ -9,8 +9,16 @@
 -export([
     reflect/0,
     render_element/1,
-    create_option/1
+    create_option/1,
+    action_fields/0
 ]).
+
+action_fields() ->
+    [
+        #dropdown.postback,
+        #dropdown.next
+    ].
+
 
 -define(DEFAULT_MULTISELECT_SIZE, 5).
 -define(DEFAULT_SINGLESELECT_SIZE, 1).

@@ -104,7 +104,7 @@ prepare_and_render(Module, Base, Element) ->
     %     an unnecessary 'tempABCXYZ' class.
         
     % Get the anchor, ID, and Class, or create a new ones if not defined...
-    Anchor = undefined, %extract_anchor(Base),
+    Anchor = maybe_extract_anchor(Module, Base, Element),
     ID = extract_id(Base, Anchor),
     Class = extract_class(Base, Anchor, ID),
 
@@ -122,6 +122,26 @@ prepare_and_render(Module, Base, Element) ->
     % Reset the anchor (likely changed during the inner render)...
     wf_context:anchor(Anchor),
     Html.
+
+maybe_extract_anchor(Module, Base, Element) ->
+    ActionFields = action_fields(Module),
+    Extract = lists:any(fun(F) ->
+        Val = element(F, Element),
+        not(Val == "" orelse Val == <<>> orelse Val == undefined)
+    end, ActionFields),
+    case Extract of
+        true -> extract_anchor(Base);
+        false -> undefined
+    end.
+
+action_fields(Module) ->
+    case erlang:function_exported(Module, action_fields, 0) of
+        true ->
+            [#elementbase.actions | Module:action_fields()];
+        false ->
+            [#elementbase.actions]
+    end.
+
 
 extract_anchor(#elementbase{anchor=undefined}) ->
     normalize_id(temp_id());

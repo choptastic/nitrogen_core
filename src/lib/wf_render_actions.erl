@@ -116,6 +116,9 @@ wrap_in_dependency(Url, Script) ->
 -spec generate_anchor_script_if_needed(ActionScript :: script(),
                                        Anchor :: id(),
                                        Target :: id()) -> script().
+
+generate_anchor_script_if_needed(_ActionScript, undefined, undefined)->
+    "";
 generate_anchor_script_if_needed(ActionScript, Anchor, Target) ->
 	case needs_anchor_script(ActionScript) of
 		true  -> generate_anchor_script(Anchor, Target);
@@ -143,9 +146,13 @@ needs_anchor_script([Script|_]) when is_list(Script); is_binary(Script) ->
 needs_anchor_script(_) ->
 	true.
 
--spec generate_anchor_script(Anchor :: id(), Target :: id()) -> script().
-generate_anchor_script(Anchor, Target) ->
-	wf:f(<<"\nNitrogen.$anchor('~s', '~s');">>, [Anchor, Target]).
+-spec generate_anchor_script(Anchor :: id(), Target :: id()) -> binary().
+generate_anchor_script(undefined, undefined) ->
+    "";
+generate_anchor_script(Anchor0, Target0) ->
+    Anchor = wf:to_binary(Anchor0),
+    Target = wf:to_binary(Target0),
+	<<"\nNitrogen.$anchor('",Anchor/binary,"', '",Target/binary,"');">>. %, [Anchor, Target]).
 
 % Calls the render_action/4 function of an action to turn an action record into Javascript.
 -spec call_action_render(Module :: module(),

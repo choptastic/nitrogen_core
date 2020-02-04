@@ -20,7 +20,7 @@
 
 -type pickled() :: binary() | string().
 
--spec pickle(Data :: term()) -> pickled().
+-spec pickle(Data :: term()) -> binary().
 pickle(Data) ->
     Message = term_to_binary({Data,os:timestamp()}),
     Padding = size(Message) rem 16,
@@ -72,8 +72,8 @@ inner_depickle(PickledData) ->
 signkey() ->
     %% Commented out because if the cache handler is actually initialized in
     %% the right order, we don't need to call simple_cache directly.
-    %simple_cache:get(nitrogen, 1000, signkey, fun() ->
-    wf:cache(signkey, 1000, fun() ->
+    simple_cache:get(nitrogen, 10000, signkey, fun() ->
+    %wf:cache(signkey, 1000, fun() ->
         case config_handler:get_value(signkey) of
             undefined ->
                 erlang:md5(wf:to_list(erlang:get_cookie()));
@@ -91,7 +91,7 @@ signkey() ->
 % schemes, and how browsers all treat cookie quoting differently.
 %
 % See https://github.com/mochi/mochiweb/blob/master/src/mochiweb_cookies.erl#L98
-modified_base64_encode(B) ->b64fast:encode64(B).
+modified_base64_encode(B) -> b64fast:encode64(B).
 %modified_base64_encode(B) -> m_b64_e(b64fast:encode64(B), <<>>).
 m_b64_e(<<>>, Acc) -> Acc;
 m_b64_e(<<$+, Rest/binary>>, Acc) -> m_b64_e(Rest, <<Acc/binary, $->>);

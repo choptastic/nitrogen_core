@@ -7,8 +7,16 @@
 -include("wf.hrl").
 -export([
     reflect/0,
-    render_element/1
+    render_element/1,
+    action_fields/0
 ]).
+
+action_fields() ->
+    [
+        #button.click,
+        #button.postback,
+        #button.next
+    ].
 
 -spec reflect() -> [atom()].
 reflect() -> record_info(fields, button).

@@ -48,13 +48,12 @@ html_name(Id, Name) ->
 %%%  Empty tags %%%
 
 emit_tag(TagName, Props) ->
-    STagName = wf:to_list(TagName),
-    [
-        "<",
-        STagName,
+    STagName = wf:to_binary(TagName),
+    wf:to_unicode_binary([
+        <<"<",STagName/binary>>,
         write_props(Props),
         "/>"
-    ].
+    ]).
 
 %%% Tags with child content %%%
 
@@ -66,16 +65,16 @@ emit_tag(TagName, [], Props) when ?NO_SHORT_TAGS(TagName) ->
     emit_tag(TagName, Props);
 
 emit_tag(TagName, Content, Props) ->
-    STagName = wf:to_list(TagName),
+    STagName = wf:to_binary(TagName),
     [
-        "<", 
-        STagName, 
-        write_props(Props), 
-        ">", 
+        wf:to_unicode_binary([
+            "<",
+            STagName,
+            write_props(Props), 
+            ">"
+        ]), 
         Content,
-        "</", 
-        STagName, 
-        ">"
+        <<"</",STagName/binary,">">>
     ].    
 
 %%% Property display functions %%%
@@ -121,7 +120,7 @@ display_property({Prop, undefined}) when Prop =/= "value" ->
     [];    
 
 display_property({Prop, Value}) when is_integer(Value); is_atom(Value); is_float(Value) ->
-    [" ", Prop, "=\"", wf:to_list(Value), "\""];
+    [" ", Prop, "=\"", wf:to_binary(Value), "\""];
 
 %% 'class' is a special kind of field, which will be reformatted to handle
 display_property({"class", Values}) ->

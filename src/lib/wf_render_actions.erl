@@ -176,8 +176,8 @@ normalize_path(Path) when is_atom(Path) ->
     string:join(Tokens1, " ");
 normalize_path(String) when is_binary(String) ->
     normalize_path(binary_to_list(String));
-normalize_path("wfid_" ++ String) -> "." ++ String;
-normalize_path("temp" ++ String) -> ".wfid_" ++ String;
+normalize_path(String = "wfid_" ++ _) -> "." ++ String;
+normalize_path(String = "temp" ++ _) -> ".wfid_" ++ String;
 normalize_path(String) ->
     re:replace(String, "##", ".wfid_", [global, {return, binary}]).
     %wf_utils:replace(String, "##", ".wfid_").

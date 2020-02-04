@@ -104,7 +104,7 @@ prepare_and_render(Module, Base, Element) ->
     %     an unnecessary 'tempABCXYZ' class.
         
     % Get the anchor, ID, and Class, or create a new ones if not defined...
-    Anchor = undefined, %extract_anchor(Base),
+    Anchor = extract_anchor(Base),
     ID = extract_id(Base, Anchor),
     Class = extract_class(Base, Anchor, ID),
 

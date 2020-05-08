@@ -93,6 +93,7 @@
 
         init_context/1,
         make_handler/2,
+        clear_context/0,
 
         context/0,
         context/1
@@ -461,6 +462,10 @@ init_context(Bridge) ->
         ]
     },
     context(Context).
+
+clear_context() ->
+    context(undefined).
+    
 
 make_handler(Name, Module) -> 
     #handler_context { 

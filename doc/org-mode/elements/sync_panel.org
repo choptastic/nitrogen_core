@@ -46,7 +46,7 @@
 
    + [[./panel.html][panel element]]
 
-   + [[link:../api.html#sec-5][Asynchronous Page Updates]]
+   + [[../api.html#sec-5][Asynchronous Page Updates]]
 
    + [[/demos/sync_panel][Demo of the #sync\_panel element]]
 

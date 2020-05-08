@@ -24,7 +24,7 @@ run() ->
             Other -> 
                 Message = wf:f("Errors: ~p~n", [Other]),
                 Bridge1 = sbw:set_response_data(Message, Bridge),
-                sbw:build_response(Bridge1)
+                clear_context_and_build_response(Bridge1)
         end
     catch
         exit:normal ->
@@ -53,7 +53,7 @@ run_crash(Bridge, Type, Error, Stacktrace) ->
                 {Type, Error, Stacktrace}]),
             Bridge1 = sbw:set_status_code(500, Bridge),
             Bridge2 = sbw:set_response_data("Internal Server Error", Bridge1),
-            sbw:build_response(Bridge2)
+            clear_context_and_build_response(Bridge2)
     end.
 
 init_websocket(SerializedPageContext) ->
@@ -260,7 +260,7 @@ run_crashed_postback_request(Type, Error, Stacktrace) ->
 build_static_file_response(Path) ->
     Bridge = wf_context:bridge(),
     Bridge1 = sbw:set_response_file(Path, Bridge),
-    sbw:build_response(Bridge1).
+    clear_context_and_build_response(Bridge1).
 
 build_first_response(Html, Script) ->
     % Update the output with any script...
@@ -270,7 +270,7 @@ build_first_response(Html, Script) ->
     % Update the response bridge and return.
     Bridge = wf_context:bridge(),
     Bridge1 = sbw:set_response_data(Html2, Bridge),
-    sbw:build_response(Bridge1).
+    clear_context_and_build_response(Bridge1).
 
 build_postback_response(Script) ->
     % Update the response bridge and return.
@@ -278,7 +278,13 @@ build_postback_response(Script) ->
     %% Encoding for a postback request will be utf8
     Script1 = unicode:characters_to_binary(Script),
     Bridge1 = sbw:set_response_data(Script1, Bridge),
-    sbw:build_response(Bridge1).
+    clear_context_and_build_response(Bridge1).
+
+
+clear_context_and_build_response(Bridge) ->
+    wf_context:clear_context(),
+    sbw:build_response(Bridge).
+    
 
 replace_script(_,Html) when ?IS_STRING(Html) -> Html;
 replace_script(Script, [script|T]) -> [Script|T];

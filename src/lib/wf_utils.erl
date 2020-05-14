@@ -119,6 +119,7 @@ coalesce([]) -> undefined;
 coalesce([H]) -> H;
 coalesce([undefined|T]) -> coalesce(T);
 coalesce([[]|T]) -> coalesce(T);
+coalesce([<<>>|T]) -> coalesce(T);
 coalesce([H|_]) -> H.
 
 %%% BASE RECORDS %%%

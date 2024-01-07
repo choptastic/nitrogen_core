@@ -14,3 +14,4 @@ ebin/
 rebar
 rebar3
 rebar3.mk
+wf_template.erl

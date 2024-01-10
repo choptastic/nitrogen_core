@@ -24,6 +24,9 @@
     app_modules/1,
     ensure_loaded/1,
     write_debug/2,
+    get_elements/0,
+    set_elements/1,
+    add_element/1,
     profile/3,
     pterm/1,
     pterm/2

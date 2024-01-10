@@ -310,3 +310,14 @@ pterm(Key) ->
 
 pterm(Key, Value) ->
     persistent_term:put({nitrogen_core, Key}, Value).
+
+
+get_elements() ->
+    persistent_term:get(nitrogen_elements, []).
+
+set_elements(Elements) ->
+    persistent_term:put(Elements).
+
+add_element(Element) ->
+    Elements = get_elements(),
+    ok.

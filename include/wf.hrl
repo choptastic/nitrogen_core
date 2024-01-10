@@ -7,6 +7,7 @@
 
 %% This is the parse_transform to allow extending fields
 -compile({parse_transform, rekt}).
+%-compile({parse_transform, wf_auto_attr}).
 
 -define(WF_EXTEND(OrigRec, NewRec, Module, Fields), -extend({OrigRec, NewRec, [{module, Module} | Fields]})).
 -define(WF_BLANK(X), (X==undefined orelse X=="" orelse X==<<>>)).
@@ -42,6 +43,8 @@
 -type data_fields()         :: [data_field_name()
                                 | {data_field_name()}
                                 | {data_field_name(),data_field_value()}].
+-type html_attribute()      :: {atom() | text(), atom() | text()}.
+-type html_attributes()     :: [html_attribute()].
 -type aria_field_name()     :: atom() | text().
 -type aria_field_value()    :: atom() | text().
 -type aria_fields()         :: [{aria_field_name(), aria_field_value()}].
@@ -220,7 +223,8 @@
         title=""                :: undefined | text(),
         role=""                 :: text() | atom(),
         data_fields=[]          :: data_fields(),
-        aria=[]                 :: aria_fields()
+        aria=[]                 :: aria_fields(),
+        attrs=[]                :: html_attributes()
     ).
 
 -record(elementbase, {?ELEMENT_BASE(undefined)}).
@@ -761,6 +765,18 @@
         verify_url              :: url() | undefined
     }).
 
+-record(iframe, {?ELEMENT_BASE(element_iframe),
+        align                   :: text() | atom(),
+        frameborder             :: integer() | undefined,
+        height                  :: integer() | undefined,
+        name=""                 :: text(),
+        sandbox=""              :: text(),
+        seamless                :: atom() | text(),
+        src                     :: url(),
+        srcdoc=""               :: text(),
+        width                   :: integer() | undefined,
+        allowfullscreen=true    :: boolean()
+    }).
 
 %% HTML Semantic Elements
 -record(time, {?ELEMENT_BASE(element_time),

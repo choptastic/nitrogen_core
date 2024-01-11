@@ -176,7 +176,8 @@ Erlang code.
 -include("wf.hrl").
 
 -export([match_tag/3,
-        test_string/1,
+        string/1,
+        string/2,
         test1/0,
         test2/0,
         test3/0,
@@ -300,9 +301,13 @@ replace_attr_regex(list, Val) ->
     ["[",Val,"]"].
     
 
-test_string(Str) -> 
-    {ok, Tokens, _} = wf_template_scan:string(Str, 1),
-    {ok, Code} = wf_template:parse(Tokens),
+string(Str) ->
+    string(Str, 1).
+
+string(Str, Anno) -> 
+    file:write_file("tmp/source_code.ntml", Str),
+    {ok, Tokens, _} = wf_template_scan:string(Str, Anno),
+    {ok, Code} = parse(Tokens),
     io:format("Produced Erlang Code:~n~s~n",[Code]),
     file:write_file("/tmp/temp_code.erl", Code),
     Code.
@@ -320,18 +325,18 @@ make_var(Var) ->
 
 test1() ->
     Str = "<a></a>",
-    test_string(Str).
+    string(Str).
 
 test2() ->
     Str = "<a>
     <b>
     </b>
     </a>",
-    test_string(Str).
+    string(Str).
 
 test3() ->
     Str = wf_template_scan:html(),
-    test_string(Str).
+    string(Str).
 
 test4() ->
     Body = "
@@ -346,7 +351,7 @@ test4() ->
             <#span class=swell-@Badge>@not_a_variable</#span>
         </#panel>
     ",
-    test_string(Body).
+    string(Body).
 
 redo() ->
     yecc:file(?FILE, [verbose, {parserfile, "/tmp/wf_template.erl"}]).

@@ -25,6 +25,9 @@ eunit: rebar3
 publish: rebar3
 	$(REBAR) hex publish
 
+shell:
+	$(REBAR) shell
+
 test: rebar3
 	mkdir -p test
 	rm -fr test/browsertest

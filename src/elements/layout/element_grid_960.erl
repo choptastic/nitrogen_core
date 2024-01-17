@@ -95,12 +95,12 @@ to_classes(Record) ->
         container -> 
             %% Construct the container_N class, and add any other user
             %% defined classes.
-            ContainerClass = "container_" ++ integer_to_list(Record#grid.columns),
+            ContainerClass = "container_" ++ wf:to_list(Record#grid.columns),
             [ContainerClass, Record#grid.class];
         grid -> 
             %% Just construct the grid_N class. User defined classes
             %% are added to inner panel.
-            GridClass = "grid_" ++ integer_to_list(Record#grid.columns),
+            GridClass = "grid_" ++ wf:to_list(Record#grid.columns),
             [GridClass]
     end,
     
@@ -119,24 +119,24 @@ to_classes(Record) ->
     %%% Check for prefix...
     C3 = case Record#grid.prefix of
         undefined -> C2;
-        Prefix -> ["prefix_" ++ integer_to_list(Prefix)|C2]
+        Prefix -> ["prefix_" ++ wf:to_list(Prefix)|C2]
     end,
 
     %%% Check for suffix...
     C4 = case Record#grid.suffix of
         undefined -> C3;
-        Suffix -> ["suffix_" ++ integer_to_list(Suffix)|C3]
+        Suffix -> ["suffix_" ++ wf:to_list(Suffix)|C3]
     end,
 
     %%% Check for push...
     C5 = case Record#grid.push of
         undefined -> C4;
-        Push -> ["push_" ++ integer_to_list(Push)|C4]
+        Push -> ["push_" ++ wf:to_list(Push)|C4]
     end,
 
     %%% Check for pull...
     C6 = case Record#grid.pull of
         undefined -> C5;
-        Pull -> ["pull_" ++ integer_to_list(Pull)|C5]
+        Pull -> ["pull_" ++ wf:to_list(Pull)|C5]
     end,
     C6.

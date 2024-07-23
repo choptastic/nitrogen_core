@@ -79,11 +79,16 @@ render_element(Record) ->
 
     Opts = OptChartType ++ OptTitle ++ OptAxes ++ OptLegend ++ OptColor ++ OptLineColors ++ Opt3d ++ OptSeries,
 
+    OptsMerged = case Record#google_chart.options of
+        undefined -> Opts;
+        OverrideOpts -> ds:set(Opts, OverrideOpts)
+    end,
+
     ProcessedData = process_data(Record, OptAxes, Record#google_chart.data),
     
     Tempid = wf:temp_id(),
 
-    JS = code_from_data(Record, Tempid, Type, ProcessedData, Opts),
+    JS = code_from_data(Record, Tempid, Type, ProcessedData, OptsMerged),
 
     wf:defer(JS),
 

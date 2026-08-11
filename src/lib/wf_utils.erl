@@ -346,4 +346,5 @@ set_elements(Elements) ->
 
 add_element(Element) ->
     Elements = get_elements(),
+    set_elements([Element | Elements]),
     ok.

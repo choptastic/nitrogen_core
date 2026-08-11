@@ -15,6 +15,9 @@ include rebar3.mk
 clean:
 	rm -fr _build rebar.lock
 
+clean_docs:
+	rm -fr doc/Nitrogen.docset doc/Nitrogen.tgz doc/work
+
 compile: rebar3
 	$(REBAR) compile
 
@@ -32,10 +35,10 @@ test: rebar3
 	mkdir -p test
 	rm -fr test/browsertest
 	$(MAKE) eunit
-	git clone https://github.com/nitrogen/NitrogenProject.com.git -b rebar3 test/browsertest
+	git clone https://github.com/nitrogen/NitrogenProject.com.git -b 3.0 test/browsertest
 	mkdir -p test/browsertest/_checkouts
 	ln -s ../../.. test/browsertest/_checkouts/nitrogen_core
-	cd test/browsertest; make test_all TESTLOGDIR="../results.$(shell date +%Y-%m-%d.%H%M%S)"
+	cd test/browsertest; $(MAKE) test_all TESTLOGDIR="../results.$(shell date +%Y-%m-%d.%H%M%S)"
 	rm -fr test/browsertest
 
 dash-docs:

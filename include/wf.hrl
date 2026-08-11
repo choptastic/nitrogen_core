@@ -10,7 +10,10 @@
 %-compile({parse_transform, wf_auto_attr}).
 
 -define(WF_EXTEND(OrigRec, NewRec, Module, Fields), -extend({OrigRec, NewRec, [{module, Module} | Fields]})).
--define(WF_BLANK(X), (X==undefined orelse X=="" orelse X==<<>>)).
+-define(WF_HEX(C), (
+                    (C >= $0 andalso C =< $9) orelse
+                    (C >= $a andalso C =< $f) orelse
+                    (C >= $A andalso C =< $F))).
 -define(WF_PROFILE(Tag, Cmd, To), wf:profile(Tag, fun() -> Cmd end, To)).
 -define(WF_PROFILE(Tag, Cmd), wf:profile(Tag, fun() -> Cmd end)).
 -define(WF_PROFILE(Cmd), ?WF_PROFILE(??Cmd, Cmd)).
@@ -25,6 +28,10 @@
 
 %% Allow Dialzer to be run on the .ebin files
 -compile(debug_info).
+
+
+%% TODO:  Huge Todo:  Migrate all the named types from this file to
+%% nitrogen.erl. I suspect this will speed up dialyzer comparisons quite nicely
 
 -type nitrogen_element()    :: tuple().
 -type template_script_element() :: script | mobile_script.
@@ -51,6 +58,7 @@
 -type wire_priority()       :: eager | normal | defer.
 -type class()               :: string() | binary() | atom() | [string() | binary() | atom()].
 -type text()                :: string() | binary() | iolist() | integer() | atom().
+-type icon()                :: atom() | string() | binary() | tuple().
 -type html_encode()         :: boolean() | whites | fun((term()) -> text()).
 -type html()                :: string() | binary() | iolist().
 -type script()              :: string() | binary() | iolist().
@@ -87,6 +95,10 @@
 -type websocket_in()        :: websocket_msg() | websocket_decoded().
 -type websocket_out()       :: websocket_msg().
 -type websocket_reply()     :: noreply | {reply, websocket_out()}.
+
+-type validator_type()      :: integer | number | not_blank | email | max_length | min_length | custom | atom().
+-type validate_event()      :: submit | blur | postback.
+-type validate_events()     :: validate_event() | [validate_event()].
 
 %%% CONTEXT %%%
 
@@ -147,6 +159,7 @@
 
 -ifndef(LOGGER_HRL).
 -define(PRINT(Var), error_logger:info_msg("DEBUG: ~p~n~p:~p~n~p~n  ~p~n", [self(), ?MODULE, ?LINE, ??Var, Var])).
+-define(PRINT(Msg, Args), error_logger:info_msg("DEBUG: ~p~n~p:~p~n  ~ts~n", [self(), ?MODULE, ?LINE, wf:f(Msg, Args)])).
 -define(LOG(Msg, Args), error_logger:info_msg(Msg, Args)).
 -define(WF_LOG(Msg, Args), error_logger:info_msg(Msg, Args)).
 -define(DEBUG, error_logger:info_msg("DEBUG: ~p:~p~n", [?MODULE, ?LINE])).
@@ -155,6 +168,7 @@
 %% logger.hrl has been included - avoid redefining the OTP ?LOG macro
 -define(WF_LOG(Msg, Args), ?LOG_INFO(Msg, Args)).
 -define(PRINT(Var), ?LOG_INFO("DEBUG: ~p: ~p~n", [??Var, Var])).
+-define(PRINT(Msg, Args), ?LOG_INFO("DEBUG: ~ts~n", [wf:f(Msg, Args)])).
 -define(DEBUG, ?LOG_INFO("DEBUG: ~p:~p~n", [?MODULE, ?LINE])).
 -endif.
 
@@ -162,11 +176,25 @@
 
 %%% GUARDS %%%
 
--define(IS_STRING(Term),
+-define(WF_STRING(Term),
     (is_list(Term) andalso Term /= [] andalso is_integer(hd(Term)))).
+
+-define(IS_STRING(Term), ?WF_STRING(Term)).
 
 -define(IS_ACTION_PRIORITY(Priority),
     (Priority=:=normal orelse Priority=:=eager orelse Priority=:=defer)).
+
+-define(WF_BLANK(X), (X==undefined orelse X=="" orelse X==<<>>)).
+
+-define(IS_ACTION(X), (is_tuple(X) andalso element(#actionbase.is_action, X)==is_action)).
+
+%% TODO: Still not done
+-define(IS_VALIDATOR(X), (is_tuple(X) andalso element(#validatorbase.is_action, X)==is_validator)).
+
+-define(IS_ELEMENT(X), (is_tuple(X) andalso element(#elementbase.is_element, X)==is_element)).
+
+%%% HELPER MACROS %%%
+
 
 -define(PRIORITY_WIRE(Priority),
         (case Priority of
@@ -176,6 +204,7 @@
             wire    -> wire
         end)
     ).
+
 
 -define(WF_SAFE(Exp, Default), (try Exp catch _:_ -> Default end)).
 
@@ -302,8 +331,8 @@
         for=""                  :: id()
     }).
 -record(icon, {?ELEMENT_BASE(element_icon),
-        icon                    :: atom() | string() | binary() | tuple(), 
-        prefix=icon             :: atom() | string() | binary(),
+        icon                    :: icon(),
+        prefix                  :: atom() | string() | binary(),
         type                    :: atom(),
         size                    :: integer() | atom() | string() | binary(),
         version=undefined       :: integer() | atom() | string()
@@ -316,6 +345,7 @@
         text=""                 :: text(),
         body=""                 :: body(),
         image=undefined         :: undefined | url(),
+        icon=undefined          :: undefined | icon(),
         new=false               :: boolean(),
         html_encode=true        :: html_encode(),
         mobile_target=false     :: boolean(),
@@ -331,9 +361,20 @@
 -record(email_link, {?ELEMENT_BASE(element_email_link),
         text=""                 :: text(),
         body=""                 :: body(),
+        image                   :: undefined | url(),
+        icon                    :: icon(),
         html_encode=true        :: html_encode(),
         email=""                :: text()
     }).
+-record(phone_link, {?ELEMENT_BASE(element_phone_link),
+        text=""                 :: text(),
+        body=""                 :: body(),
+        image                   :: undefined | url(),
+        icon                    :: icon(),
+        html_encode=true        :: html_encode(),
+        phone=""                :: text()
+    }).
+
 -record(error, {?ELEMENT_BASE(element_error),
         text=""                 :: text(),
         html_encode=true        :: html_encode()
@@ -349,6 +390,7 @@
         text=""                 :: text(),
         body=""                 :: body(),
         image=undefined         :: undefined | url(),
+        icon                    :: icon(),
         html_encode=true        :: html_encode(),
         next                    :: id(),
         click                   :: actions(),
@@ -702,7 +744,8 @@
         html_encode=true        :: html_encode(),
         start_mode=view         :: view | edit,
         validators=[]           :: validators(),
-        delegate                :: module()
+        delegate                :: module(),
+        hover_text              :: undefined | text()
     }).
 -record(inplace_textbox, {?ELEMENT_BASE(element_inplace_textbox),
         tag                     :: term(),
@@ -710,15 +753,19 @@
         html_encode=true        :: html_encode(),
         start_mode=view         :: view | edit,
         validators=[]           :: validators(),
-        delegate                :: module()
+        delegate                :: module(),
+        hover_text              :: undefined | text()
     }).
 -record(inplace, {?ELEMENT_BASE(element_inplace),
         tag                     :: term(),
         text=""                 :: text(),
         delegate                :: module(),
-        view                    :: body(),
-        edit                    :: body(),
-        start_mode=view         :: view | edit
+        view                    :: undefined | fun((ID :: term(), Val :: term()) -> body()) | body(),
+        edit                    :: undefined | fun((ID :: term(), Val :: term()) -> body()) | body(),
+        start_mode=view         :: view | edit,
+        hover_text              :: undefined | text(),
+        replace_id='##'         :: term(),
+        replace_value='$$'      :: term()
     }).
 
 -record(upload, {?ELEMENT_BASE(element_upload),
@@ -786,7 +833,39 @@
         html_encode=true        :: html_encode()
     }).
 
+-type quickform_field_opts()    :: ds:object().
+-type quickform_id()            :: id().
+-type quickform_label()         :: text().
+-type quickform_field_type()    :: textbox |
+                                    textarea |
+                                    datepicker |
+                                    date_dropdown |
+                                    time |
+                                    yesno |
+                                    dropdown | {dropdown, options()} |
+                                    {year, Min :: integer(), Max :: integer()} |
+                                    {time, From :: qdate:qdate(), To :: qdate:qdate()} |
+                                    {yesno, YesText :: text(), NoText :: text()} |
+                                    atom() | string() | binary(). %% these last 3 are catch-alls for valid input types
 
+-type quickform_field()         ::  {quickform_id(), quickform_label()} |
+                                    {quickform_id(), quickform_label(), quickform_field_type()} |
+                                    {quickform_id(), quickform_label(), quickform_field_type(), quickform_field_opts()}.
+
+-record(quickform_group, {
+        header=""               :: body(),
+        fields=[]               :: quickform_fields(),
+        class                   :: class()
+    }).
+
+-type quickform_fields()        :: [quickform_fields() | #quickform_group{} | '-' | body()].
+
+-record(quickform, {?ELEMENT_BASE(element_quickform),
+                    delegate    :: module(),
+                    tag         :: term(),
+                    data        :: undefined | map() | proplist() | ds:object(),
+                    fields=[]   :: quickform_fields()
+    }).
 
 %% 960.gs Grid
 
@@ -862,15 +941,16 @@
         height=150              :: integer(),
         axes=[]                 :: undefined | [#chart_axis{}],
         data=[]                 :: undefined | [#chart_data{}],
-        grid_x=undefined        :: undefined | integer(),
-        grid_y=undefined        :: undefined | integer(),
+        grid_x=undefined        :: undefined | integer(), %% not clear what this did
+        grid_y=undefined        :: undefined | integer(), %% not clear what this did
         grid_line_length=1      :: integer(),
         grid_blank_length=5     :: integer(),
         background_color=ffffff :: color(),
         chart_color=ffffff      :: color(),
         legend_location=bottom  :: google_chart_position(),
-        bar_space=3             :: integer(),
-        bar_group_space=7       :: integer()
+        bar_space=3             :: integer(), %% no longer supported
+        bar_group_space=7       :: integer(), %% no longer supported
+        options=[]              :: proplist() | map()
     }).
 -record(qr, {?ELEMENT_BASE(element_qr),
         data=undefined          :: any(),
@@ -1002,7 +1082,7 @@
     }).
 %% we want validation assignments to happen last, so we use AV_BASE and set deferral to zero first
 -record(validate, {?ACTION_BASE(action_validate),
-        on=submit               :: atom(),
+        on=submit               :: validate_events(),
         success_text=" "        :: text(),
         group                   :: string() | binary() | atom(),
         validators              :: validators(),
@@ -1020,12 +1100,48 @@
 -record(alert, {?ACTION_BASE(action_alert),
         text=""                 :: text()
     }).
--record(confirm, {?ACTION_BASE(action_confirm),
-        text=""                 :: text(),
-        postback                :: term(),
-        vessel                  :: id() | text(),
-        delegate                :: module()
+-record(modal, {?ACTION_BASE(action_modal),
+        id                      :: undefined | id(),
+        text=""                 :: text() | undefined,
+        body                    :: body() | undefined,
+        title_text              :: text() | undefined,
+        title_body              :: body() | undefined,
+        buttons=[]              :: body() | undefined |
+                                    [#button{} |
+                                     {text(), Postback :: any()} |
+                                     {text(), Postback :: any(), Delegate :: module()}],
+
+        close_text              :: text() | undefined,
+        close_body              :: body() | undefined,
+        show_close_button=true  :: boolean(),
+        options=[]              :: term()
     }).
+%% create #confirm{} from #modal{}
+?WF_EXTEND(modal, confirm, action_confirm, [
+        {ok_text,   undefined,  "text() | undefined"},
+        {ok_body,   undefined,  "body() | undefined"},
+        {postback,  undefined,  "term()"},
+        {vessel,    undefined,  "id() | text()"},
+        {delegate,  undefined,  "module()"},
+        {basic,     false,      "boolean()"}
+]).
+
+%% Create #prompt{} from #modal{}
+?WF_EXTEND(modal, prompt, action_prompt, [
+        %% `tag` used instead of `postback` because `postback` implies a call to
+        %% event/1, while `tag` implies a call to a different function
+        {tag,       undefined,  "term()"},
+        {vessel,    undefined,  "id() | text()"},
+        {delegate,  undefined,  "module()"},
+        {basic,     false,      "boolean()"},
+        {fields,    [],         "list()"},
+        {default,   "",         "text()"}
+]).
+-record(close_modal, {?ACTION_BASE(action_modal),
+        id                      :: undefined | id(),
+        options=[]              :: term()
+    }).
+
 -record(console_log, {?ACTION_BASE(action_console_log),
         text=""                 :: any()
     }).
@@ -1127,22 +1243,23 @@
         unless_has_value        :: undefined | id() | [id()]
     }).
 -record(is_email, {?VALIDATOR_BASE(validator_is_email)}).
--record(is_integer, {?VALIDATOR_BASE(validator_is_integer),
+-record(is_integer, {?VALIDATOR_BASE(validator_is_number),
         min                     :: undefined | integer(),
         max                     :: undefined | integer(),
         allow_blank=false       :: boolean()
     }).
 -record(is_number, {?VALIDATOR_BASE(validator_is_number),
+        type=number             :: number | integer,
         min                     :: undefined | integer(),
         max                     :: undefined | integer(),
         allow_blank=false       :: boolean()
     }).
--record(min_length, {?VALIDATOR_BASE(validator_min_length),
+-record(min_length, {?VALIDATOR_BASE(validator_length),
         length                  :: undefined | integer()
     }).
--record(max_length, {?VALIDATOR_BASE(validator_max_length),
-        length                  :: undefined | integer()
-    }).
+
+?WF_EXTEND(min_length, max_length, validator_length, []).
+
 -record(confirm_password, {?VALIDATOR_BASE(validator_confirm_password),
         password                :: id()
     }).
@@ -1158,9 +1275,17 @@
         args="{}"               :: text(),
         when_empty=false        :: boolean()
     }).
+%-record(if_expr, {?ACTION_BASE(action_if_value),
+%        expr :: atom() | text(),
+%        map                     :: undefined | [{atom() | text(), actions()}],
+%        else=[]                 :: actions()
+%    }).
 -record(if_value, {?ACTION_BASE(action_if_value),
         value                   :: atom() | text(),
         map                     :: undefined | [{atom() | text(), actions()}],
+        'else'=[]                 :: actions()
+    }).
+-record(if_checked, {?ACTION_BASE(action_if_checked),
         'else'=[]                 :: actions()
     }).
 

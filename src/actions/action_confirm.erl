@@ -6,8 +6,11 @@
 -module(action_confirm).
 -include("wf.hrl").
 -export([render_action/1]).
+-export([reflect/0]).
 
-render_action(Record) -> 
+reflect() -> record_info(fields, confirm).
+
+render_action(Record = #confirm{basic=true}) -> 
     TriggerPath = Record#confirm.trigger,
     TargetPath = Record#confirm.target,
     Delegate = Record#confirm.delegate,
@@ -22,5 +25,41 @@ render_action(Record) ->
         },
         Record#confirm.actions,
         "}"
-    ].
+    ];
+render_action(Confirm = #confirm{basic=false}) ->
+    OKButtonList = make_ok_button_list(Confirm),
+    Confirm2 = maybe_set_close_text(Confirm),
+    Modal = wf_utils:copy_fields(Confirm2, #modal{}),
+    Buttons = Modal#modal.buttons ++ OKButtonList,
+    Modal2 = Modal#modal{buttons=Buttons},
+    Modal2.
 
+maybe_set_close_text(C = #confirm{close_text=T, close_body=B})
+        when ?WF_BLANK(T) andalso ?WF_BLANK(B) ->
+    %% if the close button info isn't specified, override #modal's default of
+    %% "Close" with "Cancel" (to more accurately match the way javascript's
+    %% confirm() does it)"
+    C#confirm{close_text="Cancel"};
+maybe_set_close_text(C) ->
+    C.
+
+make_ok_button_list(#confirm{postback=Postback}) when ?WF_BLANK(Postback) ->
+    [];
+make_ok_button_list(C = #confirm{ok_text=OKText, ok_body=OKBody}) when ?WF_BLANK(OKText),
+                                                                      ?WF_BLANK(OKBody) ->
+    make_ok_button_list(C#confirm{ok_body="OK"}); 
+make_ok_button_list(#confirm{ok_text=OKText, ok_body=OKBody, 
+                             postback=Postback, vessel=Vessel,
+                             delegate=Delegate, actions=Actions}) ->
+    [#button{
+        text=OKText,
+        body=OKBody,
+        postback=Postback,
+        vessel=Vessel,
+        delegate=Delegate,
+        %trigger=TriggerPath,
+        %target=TargetPath,
+        click=[Actions,#close_modal{}]
+    }];
+make_ok_button_list(_) ->
+    [].

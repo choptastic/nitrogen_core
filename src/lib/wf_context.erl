@@ -471,6 +471,7 @@ init_context(Bridge) ->
             % Core handlers...
             make_handler(config_handler, default_config_handler),
             make_handler(log_handler, default_log_handler),
+            make_handler(secret_handler, default_secret_handler),
             make_handler(process_registry_handler, nprocreg_registry_handler),
             make_handler(cache_handler, default_cache_handler),
             make_handler(query_handler, default_query_handler),
@@ -486,6 +487,8 @@ init_context(Bridge) ->
             % Handlers that possibly redirect...
             make_handler(route_handler, dynamic_route_handler),
             make_handler(security_handler, default_security_handler),
+            make_handler(validation_handler, default_validation_handler),
+            make_handler(modal_handler, default_modal_handler),
             make_handler(postback_handler, default_postback_handler)
         ]
     },

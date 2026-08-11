@@ -11,7 +11,11 @@
     temp_id/0,
     normalize_id/1,
     recurse_body/2,
+    recurse_body_like/2,
+    recurse_fields/3,
+    body_like_fields/0,
     cache_rendered/3
+    %image_or_icon/1
 ]).
 
 -spec render_and_trap_actions(Elements :: body() | fun()) -> {ok, Html :: binary(), Actions :: binary()}.
@@ -167,12 +171,23 @@ call_element_render(RenderOrTransform, Module, Element) ->
     NewElements = Module:RenderOrTransform(Element),
     inner_render_elements(NewElements).
 
+%image_or_icon(Image) when ?WF_BLANK(Image) ->
+%    "";
+%image_or_icon(Image) when ?IS_STRING(Image); is_binary(Image) ->
+%    #image{image=Image};
+%image_or_icon(Icon) when is_atom(Icon) ->
+%    #icon{icon=Icon};
+%image_or_icon(Term) ->
+%    Term.
+    
+
 -spec normalize_id(list() | atom() | binary()) -> string().
 normalize_id(ID) -> 
-    case wf:to_string_list(ID) of
-        [".wfid_" ++ _] = [NormalizedID] -> NormalizedID;
-        ["page"] -> "page";
-        [NewID]  -> ".wfid_" ++ NewID
+    [NormalizedID] = wf:to_string_list(ID),
+    case NormalizedID of
+        ".wfid_" ++ _ -> NormalizedID;
+        "page" -> "page";
+        _  -> ".wfid_" ++ NormalizedID
     end.
 
 -spec temp_id() -> string().
@@ -183,31 +198,49 @@ temp_id() ->
                        %% definition.
     "temp" ++ integer_to_list(Num).
 
+recurse_body(Fun, Elements) ->
+    recurse_fields([body], Fun, Elements).
 
-recurse_body(Fun, List) when is_list(List) ->
-    [recurse_body(Fun, X) || X <- List];
-recurse_body(Fun, Rec0) when is_tuple(Rec0), element(2, Rec0)==is_element ->
+body_like_fields() ->
+    %% These are just some semi-common record fields that should be recursed
+    %% when searching for body elements.
+    [body, empty_body, rows, cells].
+
+recurse_body_like(Fun, Elements) ->
+    recurse_fields(body_like_fields(), Fun, Elements).
+
+recurse_fields(BFields, Fun, List) when is_list(List) ->
+    [recurse_fields(BFields, Fun, X) || X <- List];
+recurse_fields(BFields, Fun, Rec0) when ?IS_ELEMENT(Rec0) ->
     try
+        %% First, apply our Fun to the record
         Rec = Fun(Rec0),
-        Mod = element(3, Rec),
+
+        %% To get the fields in this element, we need to know its module to call `reflect()`
+        %% Because all Nitrogen elements start with #elementbase, we can get
+        %% its module field with #elementbase.module
+        Mod = element(#elementbase.module, Rec),
         Fields = Mod:reflect(),
-        case lists:member(body, Fields) of
-            true ->
-                Idx = wf_utils:indexof(body, Fields),
-                Body = element(Idx, Rec),
-                Body2 = recurse_body(Fun, Body),
-                setelement(Idx, Rec, Body2);
-            false ->
-                Rec
-        end
+
+        %% Iterate through the "BodyFields" to recurse into those fields
+        lists:foldl(fun(BodyField, Acc) ->
+            case wf_utils:indexof(BodyField, Fields) of
+                undefined ->
+                    Acc;
+                Idx ->
+                    Body = element(Idx, Acc),
+                    Body2 = recurse_fields(BFields, Fun, Body),
+                    setelement(Idx, Acc, Body2)
+            end
+        end, Rec, BFields)
     catch E:T:S ->
         error_logger:warning_msg("Error trying to apply function to an element tuple: ~p~nError: ~p: ~p.~nStacktrace: ~p",[Rec0, E, T, S]),
         Rec0
     end;
-recurse_body(_Fun, X) ->
+recurse_fields(_BFields, _Fun, X) ->
     X.
 
-            
+
 
     
     

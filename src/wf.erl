@@ -1,13 +1,12 @@
 % vim: ts=4 sw=4 et
 % Nitrogen Web Framework for Erlang
-% Copyright (c) 2008-2010 Rusty Klophaus
+% Copyright (c) 2008-2025 Rusty Klophaus
 % See MIT-LICENSE for licensing information.
 
--module (wf).
+-module(wf).
 -include("wf.hrl").
--compile (export_all).
+-compile(export_all).
 
-v() -> 1.
 
 %%% EXPOSE WIRE, UPDATE, FLASH %%%
 wire(Actions) ->
@@ -136,6 +135,12 @@ f(S, Args) ->
 coalesce(L) ->
     _Value = wf_utils:coalesce(L).
 
+eval_coalesce(L) ->
+    _Value = wf_utils:eval_coalesce(L).
+
+lazy_coalesce(L) ->
+    _Value = coalesce(L).
+
 %%% WF_REDIRECT %%%
 redirect(Url) ->
     action_redirect:redirect(Url).
@@ -252,11 +257,28 @@ json_decode(Json) ->
 to_qs(ListOrMap) ->
     _Iolist = wf_convert:to_qs(ListOrMap).
 
+add_qs(URL, ListOrMap) ->
+    _IoList = wf_convert:add_qs(URL, ListOrMap).
+
+add_qs(URL, Key, Value) ->
+    _IoList = add_qs(URL, [{Key, Value}]).
+
+remove_qs(URL, Key) ->
+    _IoList = wf_convert:remove_qs(URL, Key).
+
 parse_qs(String) ->
     _Proplist = wf_convert:parse_qs(String).
 
 join(List,Delimiter) ->
     _Result = wf_convert:join(List,Delimiter).
+
+remove_blanks(List) ->
+    _Result = wf_convert:remove_blanks(List).
+
+join_nonblank(List) ->
+    _Result = wf_convert:join_nonblanks(List).
+
+
 
 %%% EXPOSE WF_BIND %%%
 % TODO
@@ -274,6 +296,11 @@ to_js_id(Path) ->
 
 temp_id() ->
     _String = wf_render_elements:temp_id().
+
+temp_ids(X) when X =< 0  ->
+    [];
+temp_ids(X) ->
+    [temp_id() | temp_ids(X-1)].
 
 normalize_id(Path) ->
     _String = wf_render_elements:normalize_id(Path).
@@ -381,7 +408,7 @@ request_body() ->
 
 %%% EXPOSE QUERY_HANDLER %%%
 q(Key) ->
-    _String = query_handler:get_value(Key).
+    query_handler:get_value(Key).
 
 qs(Key) ->
     query_handler:get_values(Key).
@@ -556,6 +583,13 @@ continue(Tag, Function) -> action_continue:continue(Tag, Function).
 
 continue(Tag, Function, TimeoutMS) -> action_continue:continue(Tag, Function, TimeoutMS).
 
+%%% SECRETS %%%
+
+secret(Key) ->
+    secret(Key, undefined).
+
+secret(Key, Default) ->
+    secret_handler:get_value(Key, Default).
 
 %%% CONFIGURATION %%%
 

@@ -79,8 +79,8 @@ render_element(Record = #upload{
 	],
 
 	JSONParam = nitro_mochijson2:encode({struct,Param}),
-	SubmitJS = wf:f("Nitrogen.$send_pending_files(jQuery('#~s').get(0),jQuery('#~s').get(0));",[FormID,FileInputID]),
-    UploadJS = wf:f("Nitrogen.$attach_upload_handle_dragdrop(jQuery('#~s').get(0),jQuery('#~s').get(0),~s);", [FormID,FileInputID,JSONParam]),
+	SubmitJS = wf:f("Nitrogen.$send_pending_files(Nitrogen.jq('#~s').get(0),Nitrogen.jq('#~s').get(0));",[FormID,FileInputID]),
+    UploadJS = wf:f("Nitrogen.$attach_upload_handle_dragdrop(Nitrogen.jq('#~s').get(0),Nitrogen.jq('#~s').get(0),~s);", [FormID,FileInputID,JSONParam]),
 
     PostbackInfo = wf_event:serialize_event_context(FinishedTag, ID, undefined, false, ?MODULE),
 
@@ -102,7 +102,7 @@ render_element(Record = #upload{
     %% 2) This object must be prefixed with 'form' since ID and Anchor could be
     %% the same, and we need to differentiate for the form.
     %% (It's a little hacky)
-    wf:defer(wf:f("Nitrogen.$recalculate_upload_dimensions($('form~s'));", [ID])),
+    wf:defer(wf:f("Nitrogen.$recalculate_upload_dimensions(Nitrogen.jq('form~s'));", [ID])),
 
     WrapperContent = [
         wf_tags:emit_tag(input, [

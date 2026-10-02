@@ -24,22 +24,22 @@ if(Nitrogen.$get_validation_system() != "livevalidation") {
 		Nitrogen.$validation_message_class = "LV_validation_message";
 
 		NitrogenClass.prototype.$get_validation = function(element) {
-			return $(element).data(this.$validation_data_field);
+			return Nitrogen.jq(element).data(this.$validation_data_field);
 		};
 
 		NitrogenClass.prototype.$set_validation = function(element, data) {
-			return $(element).data(this.$validation_data_field, data);
+			return Nitrogen.jq(element).data(this.$validation_data_field, data);
 		};
 
 		NitrogenClass.prototype.$remove_validation_artifacts = function(element) {
-			$(element).next("." + this.$validation_msg_class).remove();
+			Nitrogen.jq(element).next("." + this.$validation_msg_class).remove();
 		};
 
 
 		NitrogenClass.prototype.$init_validation = function(element, group, args) {
 			// If there is no element, we'll just return null;
 			//console.log({init_validation: element});
-			if($(element)) {
+			if(Nitrogen.jq(element)) {
 				// if the element doesn't have any validation, initialize the element for validation
 				if(!(this.$get_validation(element))) {
 					var v = new LiveValidation(element, args);

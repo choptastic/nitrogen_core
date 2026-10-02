@@ -33,23 +33,23 @@ render_action(Record) ->
 
     Script = case Record#jquery_effect.type of
         'show' when Effect==none ->
-            if_visible(Actions, ["$(this).show(", ActionsFun, ");"]);
+            if_visible(Actions, ["Nitrogen.jq(this).show(", ActionsFun, ");"]);
         'hide' when Effect==none ->
-            if_visible(["$(this).hide(", ActionsFun, ");"], Actions);
+            if_visible(["Nitrogen.jq(this).hide(", ActionsFun, ");"], Actions);
         'toggle' when Effect==none ->
             ["toggle(", ActionsFun, ");"];
         'appear' ->
-            if_visible(Actions, [wf:f("$(this).fadeIn(~p, ", [Speed]), ActionsFun, ");"]);
+            if_visible(Actions, [wf:f("Nitrogen.jq(this).fadeIn(~p, ", [Speed]), ActionsFun, ");"]);
         'fade'   ->
-            if_visible([wf:f("$(this).fadeOut(~p, ", [Speed]), ActionsFun, ");"], Actions);
+            if_visible([wf:f("Nitrogen.jq(this).fadeOut(~p, ", [Speed]), ActionsFun, ");"], Actions);
         'slideup'->
-            if_visible([wf:f("$(this).slideUp(~p, ",[Speed]), ActionsFun, ");"], Actions);
+            if_visible([wf:f("Nitrogen.jq(this).slideUp(~p, ",[Speed]), ActionsFun, ");"], Actions);
         'slidedown' ->
-            if_visible(Actions, [wf:f("$(this).slideDown(~p, ",[Speed]), ActionsFun, ");"]);
+            if_visible(Actions, [wf:f("Nitrogen.jq(this).slideDown(~p, ",[Speed]), ActionsFun, ");"]);
         'show' ->
-            if_visible(Actions, [wf:f("$(this).show('~s', ~s, ~p, ", [Effect, Options, Speed]), ActionsFun, ");"]);
+            if_visible(Actions, [wf:f("Nitrogen.jq(this).show('~s', ~s, ~p, ", [Effect, Options, Speed]), ActionsFun, ");"]);
         'hide' ->
-            if_visible([wf:f("$(this).hide('~s', ~s, ~p, ", [Effect, Options, Speed]), ActionsFun, ");"], Actions);
+            if_visible([wf:f("Nitrogen.jq(this).hide('~s', ~s, ~p, ", [Effect, Options, Speed]), ActionsFun, ");"], Actions);
         'effect' ->
             [wf:f("effect('~s', ~s, ~p, ", [Effect, Options, Speed]), ActionsFun, ");"];
         'toggle' ->
@@ -75,7 +75,7 @@ execute_actions_fun(ActionsFun) ->
 if_visible(IfVisible, IfInvisible) ->
     [
         "each(function(){
-            if($(this).is(':visible')) {",
+            if(Nitrogen.jq(this).is(':visible')) {",
                 IfVisible,
             "} else {",
                 IfInvisible,

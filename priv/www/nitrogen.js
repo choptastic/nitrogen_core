@@ -33,7 +33,38 @@ class NitrogenDeferredPromise {
     }
 }
 
+// Nitrogen.jq is the jQuery-compatible library that Nitrogen's own code uses.
+// By default it resolves to the global jQuery instance -- which is still
+// exposed as `$` (and `jQuery`) exactly as it always was, so existing apps,
+// templates and user code that call `$` directly keep working -- but it can
+// point at any jQuery-compatible library instead.
+//
+// To leave jQuery out entirely, either set `window.nitrogen_jq` before loading
+// nitrogen.js, or assign to `Nitrogen.jq` after loading it, eg:
+//
+//   window.nitrogen_jq = myJQueryCompatibleLibrary;   // or
+//   Nitrogen.jq = myJQueryCompatibleLibrary;
+//
+// Nitrogen's own code will only ever reach the DOM through this variable, so a
+// non-jQuery implementation (or a partial shim) can be swapped in. Features
+// that need a real jQuery (the jQuery UI widgets, file uploads, the ajax
+// postback fallback, and so on) will only work to the extent that the library
+// assigned here supports them.
+function resolve_nitrogen_jq() {
+    if (typeof window != "undefined" && window.nitrogen_jq) {
+        return window.nitrogen_jq;
+    }
+    if (typeof window != "undefined" && window.jQuery) {
+        return window.jQuery;
+    }
+    if (typeof jQuery != "undefined") {
+        return jQuery;
+    }
+    return null;
+}
+
 function NitrogenClass(o) {
+    this.jq = resolve_nitrogen_jq();
     this.$url = document.location.href;
     this.$div = document;
     // How frequently to check if the browser has gone to sleep.
@@ -353,7 +384,7 @@ NitrogenClass.prototype.$hide_disconnected_notice_worked = function() {
         return;
     }
 
-    // Is the purpose of `$().is(':visible')` to prevent jank when
+    // Is the purpose of `Nitrogen.jq().is(':visible')` to prevent jank when
     // removing a notice that's sliding out? or is it only to
     // determine if the notice bar is present on the page?
     if (notice_bar.clientHeight > 0) {
@@ -390,13 +421,13 @@ NitrogenClass.prototype.$validate_and_serialize = function(vessel, validationGro
     var inputs;
 
     if(vessel == null)
-        inputs = jQuery(":input");
+        inputs = Nitrogen.jq(":input");
     else
-        inputs = jQuery(vessel).find(":input");
+        inputs = Nitrogen.jq(vessel).find(":input");
 
-    var all_inputs = jQuery(inputs).not(".no_postback");
+    var all_inputs = Nitrogen.jq(inputs).not(".no_postback");
 
-    jQuery(all_inputs).each(function(i) {
+    Nitrogen.jq(all_inputs).each(function(i) {
         // We check client-side-validation first.  If all the client-side
         // validation passes, then we'll package up the params and send them
         // over via postback.
@@ -414,7 +445,7 @@ NitrogenClass.prototype.$validate_and_serialize = function(vessel, validationGro
 
             // It's a good element. Let's get the value, and return convert to
             // an empty string if it's null
-            var val = $(this).val();
+            var val = Nitrogen.jq(this).val();
 
             if(val == null)
                 val = "";
@@ -443,7 +474,7 @@ NitrogenClass.prototype.$is_unchecked = function(element) {
 NitrogenClass.prototype.$is_empty_multiselect = function(element) {
     // Skip multi-select boxes with nothing selected
     return element.type=="select-multiple"
-            && ($(element).val()==null || ($(element).val().length==0));
+            && (Nitrogen.jq(element).val()==null || (Nitrogen.jq(element).val().length==0));
 };
 
 NitrogenClass.prototype.$is_button = function(element) {
@@ -465,11 +496,11 @@ NitrogenClass.prototype.$init_validation = function(element, group, args) {
     });
 
     /*
-    if($(element)){
+    if(Nitrogen.jq(element)){
         // If the element exists, let's check if there is already validation data on the element
-        if(!$(element).data(this.$validation_data_field))
+        if(!Nitrogen.jq(element).data(this.$validation_data_field))
             // Since there is not currently validation data on the element, let's initialize some
-            $(element).data(this.$validation_data_field, {});
+            Nitrogen.jq(element).data(this.$validation_data_field, {});
         return Nitrogen.$get_validation(element);
     } else {
         return null;
@@ -488,12 +519,12 @@ NitrogenClass.prototype.$remove_validation_artifacts_promise = new NitrogenDefer
 
 NitrogenClass.prototype.$get_validation = function(element) {
     throw("validation not loaded");
-    /*return $(element).data(this.$validation_data_field);*/
+    /*return Nitrogen.jq(element).data(this.$validation_data_field);*/
 };
 
 NitrogenClass.prototype.$set_validation = function(element, data) {
     throw("validation not loaded");
-    //$(element).data(this.$validation_data_field, data);
+    //Nitrogen.jq(element).data(this.$validation_data_field, data);
 };
 
 NitrogenClass.prototype.$validate_element = function(element) {
@@ -537,13 +568,13 @@ NitrogenClass.prototype.$destroy_specific_validation = async function(trigger, t
 NitrogenClass.prototype.$destroy_target_validation = function(element) {
     var v = this.$get_validation(element);
     if(v) {
-        $(element).data(this.$validation_data_field,null);
+        Nitrogen.jq(element).data(this.$validation_data_field,null);
     }
 };
 
 NitrogenClass.prototype.$destroy_validation_group = function(validationGroup) {
     var this2 = this;
-    jQuery(":input").not(".no_postback").each(function(i) {
+    Nitrogen.jq(":input").not(".no_postback").each(function(i) {
         var LV = this2.$get_validation(this);
         if( LV && LV.group == validationGroup) {
             this2.$destroy_target_validation(this);
@@ -553,7 +584,7 @@ NitrogenClass.prototype.$destroy_validation_group = function(validationGroup) {
 
 NitrogenClass.prototype.$destroy_all_validation = function() {
     var this2 = this;
-    $("*").each(function() {
+    Nitrogen.jq("*").each(function() {
         this2.$destroy_target_validation(this);
     });
 };
@@ -575,11 +606,11 @@ NitrogenClass.prototype.$make_id = function(element) {
 /*** AJAX METHODS ***/
 
 NitrogenClass.prototype.$show_spinner = function() {
-    $("div.spinner").show();
+    Nitrogen.jq("div.spinner").show();
 }
 
 NitrogenClass.prototype.$hide_spinner = function() {
-    $("div.spinner").hide();
+    Nitrogen.jq("div.spinner").hide();
 }
 
 NitrogenClass.prototype.$do_event = function(vessel, validationGroup, onInvalid, eventContext, extraParam, ajaxSettings) {
@@ -605,9 +636,9 @@ NitrogenClass.prototype.$do_event = function(vessel, validationGroup, onInvalid,
     }
 
     // Assemble other parameters...
-    var params = jQuery.extend({}, n.$params, validationParams, extraParam, { eventContext: eventContext });
+    var params = Nitrogen.jq.extend({}, n.$params, validationParams, extraParam, { eventContext: eventContext });
 
-    var s = jQuery.extend({
+    var s = Nitrogen.jq.extend({
         dataType: 'text',
         cache: false,
         success: null,
@@ -627,10 +658,10 @@ NitrogenClass.prototype.$do_event = function(vessel, validationGroup, onInvalid,
         var bertified = Bert.encode_to_bytearray(Bert.tuple(Bert.atom("nitrogen_postback"), params));
         this.$ws_send(bertified.buffer);
     }else{
-        this.$event_obj = jQuery.ajax({ 
+        this.$event_obj = Nitrogen.jq.ajax({ 
             url: this.$url,
             type:'post',
-            data: jQuery.param(params),
+            data: Nitrogen.jq.param(params),
             dataType: s.dataType,
             cache: s.cache,
             timeout: 18000,
@@ -699,17 +730,17 @@ NitrogenClass.prototype.$do_system_event = function(eventContext) {
     n.$system_event_is_running = true;
 
     // Assemble other parameters...
-    var params = jQuery.extend( {}, n.$params, { eventContext: eventContext, is_system_event: 1 });
+    var params = Nitrogen.jq.extend( {}, n.$params, { eventContext: eventContext, is_system_event: 1 });
     if(this.$websockets_enabled) {
         delete params["pageContext"];
         var bertified = Bert.encode_to_bytearray(Bert.tuple(Bert.atom("nitrogen_postback"), params));
         n.$ws_send(bertified.buffer);
     }
     else{
-        n.$system_event_obj = $.ajax({
+        n.$system_event_obj = Nitrogen.jq.ajax({
             url: this.$url,
             type:'post',
-            data: jQuery.param(params),
+            data: Nitrogen.jq.param(params),
             dataType: 'text',
             cache: false,
             timeout: 18000,
@@ -782,10 +813,10 @@ NitrogenClass.prototype.$recalculate_upload_dimensions = function(form) {
         form = objs(form);
     }
 
-    var fakeinput = $(form).find(".upload-button");
-    var w = $(fakeinput).outerWidth(true);
-    var h = $(fakeinput).outerHeight(true);
-    $(form).find(".upload-content:visible").width(w).height(h);
+    var fakeinput = Nitrogen.jq(form).find(".upload-button");
+    var w = Nitrogen.jq(fakeinput).outerWidth(true);
+    var h = Nitrogen.jq(fakeinput).outerHeight(true);
+    Nitrogen.jq(form).find(".upload-content:visible").width(w).height(h);
 }
 
 NitrogenClass.prototype.$attach_upload_handle_dragdrop = function(form,input,settings) {
@@ -796,8 +827,8 @@ NitrogenClass.prototype.$attach_upload_handle_dragdrop = function(form,input,set
         form.$nitrogen_pending_files = [];
 
     thisNitro.$dependency_register_function("/nitrogen/jquery.fileupload.min.js",function() {
-        var dropzone = $(form).children(".upload_drop");
-        $(input).fileupload({
+        var dropzone = Nitrogen.jq(form).children(".upload_drop");
+        Nitrogen.jq(input).fileupload({
             dropZone:(settings.droppable ? dropzone : null),
             singleFileUploads:true,
             sequentialUploads:true,
@@ -805,28 +836,28 @@ NitrogenClass.prototype.$attach_upload_handle_dragdrop = function(form,input,set
             paramName:"file",
             formData: function() {
                 form.elements["pageContext"].value = thisNitro.$params["pageContext"];
-                var d = $(form).serializeArray();
+                var d = Nitrogen.jq(form).serializeArray();
                 return d;
             },
             start: function(e, data) {
                 form.pageContext.value = thisNitro.$params["pageContext"];
                 if(settings.overall_progress) 
-                    $(form).children(".upload_overall_progress").progressbar({}).slideDown();
+                    Nitrogen.jq(form).children(".upload_overall_progress").progressbar({}).slideDown();
             },
             progressall: function(e,data) {
                 if(settings.overall_progress) {
-                    $(form).children(".upload_overall_progress")
+                    Nitrogen.jq(form).children(".upload_overall_progress")
                         .progressbar("option", "value", data.loaded)
                         .progressbar("option", "max", data.total);
                     if(data.loaded == data.total) {
-                        $(form).children(".upload_overall_progress").slideUp();
+                        Nitrogen.jq(form).children(".upload_overall_progress").slideUp();
                     }
                 }
             },
             progress: function(e,data) {
                 var loaded = data.loaded;
-                $.each(data.files, function(i,f) {
-                    $("li[filename=\"" + f.name + "\"] .upload_progress").progressbar("option", "value", loaded);
+                Nitrogen.jq.each(data.files, function(i,f) {
+                    Nitrogen.jq("li[filename=\"" + f.name + "\"] .upload_progress").progressbar("option", "value", loaded);
                 });
             },
             send: function(e,data) {
@@ -846,24 +877,24 @@ NitrogenClass.prototype.$attach_upload_handle_dragdrop = function(form,input,set
                     }
                     else if(form.$nitrogen_pending_files.length > 0) {
                         form.$nitrogen_pending_files = [];
-                        $(form).children(".upload_droplist").html("");
+                        Nitrogen.jq(form).children(".upload_droplist").html("");
                     }
                 }
-                $.each(data.files,function(i,f) {
+                Nitrogen.jq.each(data.files,function(i,f) {
                     // Let's add the visual list of pending files
-                    $(form).children(".upload_droplist")
-                        .prepend($("<li></li>").attr("filename",f.name).prepend([
-                            $("<span>").text(f.name + " (" + thisNitro.$format_filesize(f.size) + ")"),
-                            $("<a>")
+                    Nitrogen.jq(form).children(".upload_droplist")
+                        .prepend(Nitrogen.jq("<li></li>").attr("filename",f.name).prepend([
+                            Nitrogen.jq("<span>").text(f.name + " (" + thisNitro.$format_filesize(f.size) + ")"),
+                            Nitrogen.jq("<a>")
                                 .attr("href","javascript:;")
                                 .addClass("upload_delete_file")
                                 .bind("click", function() {
-                                    $("li[filename=\"" + f.name + "\"]").slideUp();
+                                    Nitrogen.jq("li[filename=\"" + f.name + "\"]").slideUp();
                                     thisNitro.$delete_pending_file(form, f.name);
                                 })
                                 .html("&times;"),
 
-                            $("<div>")
+                            Nitrogen.jq("<div>")
                                 .addClass("upload_progress")
                                 .progressbar({
                                     max:f.size,
@@ -895,7 +926,7 @@ NitrogenClass.prototype.$attach_upload_handle_dragdrop = function(form,input,set
                     var Postback = "";
                 }
 
-                $.globalEval(Postback);
+                Nitrogen.jq.globalEval(Postback);
                 Nitrogen.$increment_pending_upload_counter(form,-1);
             }
         })
@@ -924,11 +955,11 @@ NitrogenClass.prototype.$format_filesize = function(size) {
 }
 
 NitrogenClass.prototype.$increment_pending_upload_counter = function(form,incrementer) {
-    var counter = $(form).data("pending_uploads");
+    var counter = Nitrogen.jq(form).data("pending_uploads");
     if(typeof(counter)=="undefined")
         counter=0;
     counter+=incrementer;
-    $(form).data("pending_uploads",counter);
+    Nitrogen.jq(form).data("pending_uploads",counter);
     if(counter==0) {
         Nitrogen.$alert_unfinished_files(form);
     }
@@ -936,18 +967,18 @@ NitrogenClass.prototype.$increment_pending_upload_counter = function(form,increm
 
 
 NitrogenClass.prototype.$upload_finished = function(Name) {
-    $(".upload_droplist").children("li[filename=\"" + Name + "\"]")
+    Nitrogen.jq(".upload_droplist").children("li[filename=\"" + Name + "\"]")
         .css("text-decoration","line-through")
         .addClass("upload_successful")
         .fadeOut();
 }
 
 NitrogenClass.prototype.$alert_unfinished_files = function(form) {
-    var files = $(form).find(".upload_droplist li:not(.upload_successful):visible");
+    var files = Nitrogen.jq(form).find(".upload_droplist li:not(.upload_successful):visible");
     if(files.length > 0) {
-        $(form).find(".upload_droplist li:not(.upload_successful)").css("color","red").fadeOut("slow");
+        Nitrogen.jq(form).find(".upload_droplist li:not(.upload_successful)").css("color","red").fadeOut("slow");
 
-        var filenames = $(files).get().map(function(f) { return $(f).text() }).join("\r\n");
+        var filenames = Nitrogen.jq(files).get().map(function(f) { return Nitrogen.jq(f).text() }).join("\r\n");
         window.alert("There was an error uploading the following file(s):\r\n" + filenames + "\r\n\r\nThis is likely due to the file(s) being too large or a misconfiguration on the server");
     }
 } 
@@ -963,7 +994,7 @@ function objs(path, anchor) {
     if(typeof path != "string")
         throw {invalid_path_in_objs: path};
     // Trim the path...
-    path = jQuery.trim(path);
+    path = Nitrogen.jq.trim(path);
 
     // If no anchor is specified, then use the last anchor set...
     if (!anchor) {
@@ -975,7 +1006,7 @@ function objs(path, anchor) {
     // Multiple parts, so split and combine results...
     if (path.indexOf(",") != -1) {
         var paths=path.split(",");
-        var a = $();
+        var a = Nitrogen.jq();
         for (var i=0; i<paths.length; i++) {
             a = a.add(objs(paths[i], anchor));
         }
@@ -984,7 +1015,7 @@ function objs(path, anchor) {
 
     // Selector is "page", so return the document...
     if (path == "page" || path == ".page") {
-    return jQuery(document);
+    return Nitrogen.jq(document);
     }
 
     // Replace "##" with ".wfid_"...
@@ -1004,8 +1035,8 @@ function objs(path, anchor) {
 
         // If no results, and this is not a valid HTML element name, then return. Otherwise,
         // keep trying with the assumption that this is an HTML element...
-        if (results.length == 0 && jQuery.inArray(path.toLowerCase(), Nitrogen.$valid_elements) == -1) {
-            return jQuery();
+        if (results.length == 0 && Nitrogen.jq.inArray(path.toLowerCase(), Nitrogen.$valid_elements) == -1) {
+            return Nitrogen.jq();
         }
     }
 
@@ -1013,10 +1044,10 @@ function objs(path, anchor) {
     // body...
     var re = new RegExp(/^body\b/);
     if (re.test(path)) {
-        return jQuery(path);
+        return Nitrogen.jq(path);
     }    
 
-    var anchor_obj = jQuery(Nitrogen.$anchor_root_path).find(anchor);
+    var anchor_obj = Nitrogen.jq(Nitrogen.$anchor_root_path).find(anchor);
     // Find all results under the anchor...
     var results = anchor_obj.find(path);
     if (results.length > 0) {
@@ -1026,14 +1057,14 @@ function objs(path, anchor) {
     // If no results under the anchor, then try on each parent, moving upwards...
     var results = anchor_obj.parentsUntil( Nitrogen.$anchor_root_path );
     for (var i=0; i<results.length; i++) {
-        var results2 = jQuery(results.get(i)).find(path);
+        var results2 = Nitrogen.jq(results.get(i)).find(path);
         if (results2.length > 0) {
             return results2;
         }       
     }
 
     // No results, so try in context of entire page.
-    return jQuery(path);
+    return Nitrogen.jq(path);
 }
 
 NitrogenClass.prototype.$valid_elements = [
@@ -1133,7 +1164,7 @@ NitrogenClass.prototype.$load_js_dependency = function(url) {
 
         // Request the file, and when it finishes, mark the file is loaded, and
         // execute any pending requests
-        $.ajax({
+        Nitrogen.jq.ajax({
             url: url,
             dataType: "script",
             success: function(data, textStatus, jqxhr) { 
@@ -1263,13 +1294,13 @@ NitrogenClass.prototype.$set_value = function(anchor, element, value, optional_l
     var n = this;
     if (!element.id) element = objs(element);
     element.each(function(index, el) {
-        if (el.value != undefined) $(el).val(value);
+        if (el.value != undefined) Nitrogen.jq(el).val(value);
         // use checked if el.type=="checkbox"
         else if (el.checked != undefined) el.checked = value;
         else if (el.src != undefined) el.src = value;
-        else if($(el).hasClass("ui-progressbar")) n.$set_progress_bar_value(el, value, optional_label);
-        else if($(el).hasClass("wf_mermaid")) { n.$mermaid(el, value) }
-        else $(el).html(value);
+        else if(Nitrogen.jq(el).hasClass("ui-progressbar")) n.$set_progress_bar_value(el, value, optional_label);
+        else if(Nitrogen.jq(el).hasClass("wf_mermaid")) { n.$mermaid(el, value) }
+        else Nitrogen.jq(el).html(value);
     });
 }
 
@@ -1278,10 +1309,10 @@ NitrogenClass.prototype.$set_values = function(anchor, element, values) {
     if(!element.id) element = objs(element);
     element.each(function(index, el) {
         if (el.type == "select-multiple") {
-            $(el).val(values);
+            Nitrogen.jq(el).val(values);
         }
         else if (el.type == "checkbox") {
-            var to_check = ($.inArray(el.value, values) != -1);
+            var to_check = (Nitrogen.jq.inArray(el.value, values) != -1);
             el.checked = to_check;
         }
     });
@@ -1298,7 +1329,7 @@ NitrogenClass.prototype.$get_element = function(anchor, element) {
 
     if(element instanceof HTMLElement) {
         el = element;
-    }else if(element instanceof jQuery) {
+    }else if(Nitrogen.jq && element instanceof Nitrogen.jq) {
         el = element.get(0);
     }
     return el;
@@ -1310,8 +1341,8 @@ NitrogenClass.prototype.$get_value = function(anchor, element) {
     if (el.value != undefined) return el.value;
     else if (el.checked != undefined) return el.checked;
     else if (el.src != undefined) return el.src;
-    else if($(el).hasClass("ui-progressbar")) n.$get_progress_bar_value(el);
-    else return $(el).html();
+    else if(Nitrogen.jq(el).hasClass("ui-progressbar")) n.$get_progress_bar_value(el);
+    else return Nitrogen.jq(el).html();
 }
 
 NitrogenClass.prototype.$is_checked = function(anchor, element) {
@@ -1336,7 +1367,7 @@ NitrogenClass.prototype.$encode_arguments_object = function(Obj) {
         for (var i=0; i<Obj.length; i++) {
             a.push(Obj[i]);
         }
-        // We want to encode to base64 due to $.param interpreting this as a unicode array.
+        // We want to encode to base64 due to Nitrogen.jq.param interpreting this as a unicode array.
         var s = Bert.encode_to_base64(a);
         return {args: s};
     }
@@ -1429,14 +1460,14 @@ NitrogenClass.prototype.$get_modal_index = function(id) {
 NitrogenClass.prototype.$scroll_to_modal = function(id) {
     var o = objs(id);
     if(o.css('position')=='absolute') {
-        var top = $(document).scrollTop() + 'px';
+        var top = Nitrogen.jq(document).scrollTop() + 'px';
         o.css('top', top);
     }
 };
 
 /*** DATE PICKER ***/
 NitrogenClass.prototype.$datepicker = function(pickerObj, pickerOptions) {
-    jQuery(pickerObj).datepicker(pickerOptions);
+    Nitrogen.jq(pickerObj).datepicker(pickerOptions);
 };
 
 /*** AUTOCOMPLETE TEXTBOX ***/
@@ -1444,7 +1475,7 @@ NitrogenClass.prototype.$autocomplete = function(path, autocompleteOptions, ente
     var n = this;
     //TODO: for now
     var vessel = null;
-    jQuery.extend(autocompleteOptions, {
+    Nitrogen.jq.extend(autocompleteOptions, {
         select: function(ev, ui) {
           var val = ui.item.value.replace(/"/g,'\\"');
           var item = (ui.item) && '{"id":"'+ui.item.id+'","value":"'+val+'"}' || '';
@@ -1459,7 +1490,7 @@ NitrogenClass.prototype.$autocomplete = function(path, autocompleteOptions, ente
           });
         }
     });
-    jQuery(path).autocomplete(autocompleteOptions);
+    Nitrogen.jq(path).autocomplete(autocompleteOptions);
 }
 
 /*** DRAG AND DROP ***/
@@ -1467,7 +1498,7 @@ NitrogenClass.prototype.$autocomplete = function(path, autocompleteOptions, ente
 NitrogenClass.prototype.$draggable = function(path, dragOptions, dragTag) {
     objs(path).each(function(index, el) {
           el.$drag_tag = dragTag;
-        jQuery(el).draggable(dragOptions);
+        Nitrogen.jq(el).draggable(dragOptions);
     });
 }
 
@@ -1480,7 +1511,7 @@ NitrogenClass.prototype.$droppable = function(path, dropOptions, dropPostbackInf
         n.$queue_event(vessel, null, null, dropPostbackInfo, {drag_item: dragItem});
     };
     objs(path).each(function(index, el) {
-          jQuery(el).droppable(dropOptions);
+          Nitrogen.jq(el).droppable(dropOptions);
     });
 }
 
@@ -1538,7 +1569,7 @@ NitrogenClass.prototype.$trap_tabs = function(selector) {
  * used in src/elements/other/element_recaptcha.erl
  * ***/
 NitrogenClass.prototype.$from_alien = function(nativeID) {
-    var input = $("input#" + nativeID).val();
+    var input = Nitrogen.jq("input#" + nativeID).val();
     objs(nativeID).val(input);
 };
 
@@ -1570,7 +1601,7 @@ NitrogenClass.prototype.$normalize_color = function(color) {
 
 NitrogenClass.prototype.$set_progress_bar_value = function(el, value, label) {
     var newlabel = ""
-    if(typeof el == "object") el = $(el);
+    if(typeof el == "object") el = Nitrogen.jq(el);
     else el = objs(el);
 
     if(typeof value=="string") value = parseInt(value);
@@ -1611,7 +1642,7 @@ NitrogenClass.prototype.$get_progress_bar_value = function(el) {
 
 NitrogenClass.prototype.$mermaid = function(el, mermaidCode) {
     if (typeof el == "object") {
-        element = $(el);
+        element = Nitrogen.jq(el);
         id = "wf_mermaid"
     }
     else  {
@@ -1902,9 +1933,23 @@ NitrogenClass.prototype.$listen_for_online = function() {
 };
 
 
+// Run a function once the DOM is ready. When a jQuery-compatible library is
+// available, defer to its `.ready()` (which is also what keeps the historical
+// timing), otherwise fall back to the plain DOM API so Nitrogen can still boot
+// with no jQuery present.
+NitrogenClass.prototype.$dom_ready = function(fun) {
+    if(this.jq) {
+        this.jq(document).ready(fun);
+    }else if(document.readyState != "loading") {
+        fun();
+    }else{
+        document.addEventListener("DOMContentLoaded", fun);
+    }
+};
+
 NitrogenClass.prototype.$attempt_websockets = function() {
     var n = this;
-    $(document).ready(function() {
+    this.$dom_ready(function() {
         if(typeof Bert == "object") {
             n.$ws_init();
         }

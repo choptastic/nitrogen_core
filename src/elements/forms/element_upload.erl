@@ -1,4 +1,4 @@
-% vim: sw=4 ts=4 et
+% vim: sw=4 ts=4 et sts=4
 % Copyright (c) 2008-2010 Rusty Klophaus
 % See MIT-LICENSE for licensing information.
 
@@ -61,7 +61,7 @@ render_element(Record = #upload{
         button_class=ButtonClass,
         data_fields=DataFields,
         aria=Aria }) ->
-    
+
     StartedTag = {upload_started, Record},
     FinishedTag = {upload_finished, Record}, 
     FormID = wf:temp_id(),
@@ -71,15 +71,15 @@ render_element(Record = #upload{
     DropListingID = wf:temp_id(),
     FileInputID = wf:temp_id(),
 
-	Param = [
-		{droppable,Droppable},
-		{autoupload,not(ShowButton)},
+    Param = [
+        {droppable,Droppable},
+        {autoupload,not(ShowButton)},
         {multiple, Multiple},
         {overall_progress, overall_progress(OverallProgress0, Multiple)}
-	],
+    ],
 
-	JSONParam = nitro_mochijson2:encode({struct,Param}),
-	SubmitJS = wf:f("Nitrogen.$send_pending_files(Nitrogen.jq('#~s').get(0),Nitrogen.jq('#~s').get(0));",[FormID,FileInputID]),
+    JSONParam = nitro_mochijson2:encode({struct,Param}),
+    SubmitJS = wf:f("Nitrogen.$send_pending_files(Nitrogen.jq('#~s').get(0),Nitrogen.jq('#~s').get(0));",[FormID,FileInputID]),
     UploadJS = wf:f("Nitrogen.$attach_upload_handle_dragdrop(Nitrogen.jq('#~s').get(0),Nitrogen.jq('#~s').get(0),~s);", [FormID,FileInputID,JSONParam]),
 
     PostbackInfo = wf_event:serialize_event_context(FinishedTag, ID, undefined, false, ?MODULE),

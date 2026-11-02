@@ -104,6 +104,15 @@ priority.
   Works exactly the same as `wf:coalesce/1`, but if the items of the list are
   explicitly listed, it can employ some Erlang trickery to combine the functionality of `wf:coalesce/1` with `wf:eval_coalesce/1`.
 
+  The following two calls are effectively identical:
+
+  ```erlang
+  wf:lazy_coalesce([do_something(), do_something_else(), do_some_other_thing()]).
+  wf:eval_coalesce([fun() -> do_something() end,
+                    fun() -> do_something_else() end,
+                    fun() -> do_some_other_thing() end]).
+  ```
+
   Reminder that it requires every element of the list to be explicitly defined in the `wf:lazy_coalesce/1` call.
 
   For example:
